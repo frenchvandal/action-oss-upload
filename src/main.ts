@@ -12,7 +12,7 @@ async function upload(): Promise<void> {
     const size: number = localFiles.length;
     let index: number = 0;
     let percent: number = 0;
-    info(`${size} files to upload`);
+    info(`${size} files to upload ⬆️`);
     for await (const file of uploadDir.globGenerator()) {
       const objectName: string = file.replace(homeDir, '');
       const response: PutObjectResult = await client.put(objectName, file);
@@ -20,6 +20,7 @@ async function upload(): Promise<void> {
       percent = (index / size) * 100;
       info(`\u001b[38;5;6m>> [${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);
     }
+    info(`${index} files uploaded ✅`);
   } catch (error) {
     warning(error.message);
   }

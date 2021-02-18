@@ -71517,7 +71517,7 @@ function upload() {
             const size = localFiles.length;
             let index = 0;
             let percent = 0;
-            core_1.info(`${size} files to upload`);
+            core_1.info(`${size} files to upload ⬆️`);
             try {
                 for (var _b = __asyncValues(uploadDir.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
                     const file = _c.value;
@@ -71535,6 +71535,7 @@ function upload() {
                 }
                 finally { if (e_1) throw e_1.error; }
             }
+            core_1.info(`${index} files uploaded ✅`);
         }
         catch (error) {
             core_1.warning(error.message);
