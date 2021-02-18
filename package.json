@@ -1,0 +1,46 @@
+{
+  "name": "action-oss-upload",
+  "description": "This GitHub Action uploads generated files to an OSS bucket",
+  "main": "lib/main.js",
+  "scripts": {
+    "build": "tsc && ncc build",
+    "test": "jest --coverage",
+    "format": "prettier --write **/*.ts",
+    "format-check": "prettier --check **/*.ts",
+    "pre-checkin": "yarn run format && yarn run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frenchvandal/action-oss-upload.git"
+  },
+  "keywords": [
+    "actions",
+    "hugo",
+    "build",
+    "package",
+    "website",
+    "aliyun",
+    "alioss"
+  ],
+  "author": "frenchvandal",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.2.6",
+    "@actions/glob": "^0.1.1",
+    "ali-oss": "^6.13.2",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "@types/ali-oss": "^6.0.7",
+    "@types/jest": "^26.0.20",
+    "@types/node": "^14.14.28",
+    "@vercel/ncc": "^0.27.0",
+    "jest": "^26.6.3",
+    "jest-circus": "^26.6.3",
+    "jest-runtime": "^26.6.3",
+    "prettier": "^2.2.1",
+    "ts-jest": "^26.5.1",
+    "typescript": "^4.1.5",
+    "typescript-formatter": "^7.2.2"
+  }
+}
