@@ -1,0 +1,29 @@
+# https://help.github.com/en/articles/metadata-syntax-for-github-actions
+name: 'GitHub Action OSS Upload'
+description: "A GitHub Action to upload files to an Alibaba Cloud OSS bucket"
+author: 'frenchvandal'
+branding:
+  color: 'orange'
+  icon: 'cloud'
+
+inputs:
+  bucket:
+    description: 'OSS bucket name'
+    required: true
+  region:
+    description: 'Endpoint'
+    required: true
+  accessKeyId:
+    description: 'Access Key ID'
+    required: true
+  accessKeySecret:
+    description: 'Access Key secret'
+    required: true
+  source:
+    description: 'Source folder of files to upload'
+    required: true
+
+
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
