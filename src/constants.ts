@@ -9,4 +9,4 @@ export const credentials: Options = {
   accessKeySecret: getInput('accessKeySecret')
 };
 
-export const homeDir: string = join(process.cwd(), getInput('source'), '/');
+export const homeDir: string = join(process.cwd(), getInput('source'));

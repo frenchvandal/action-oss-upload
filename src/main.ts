@@ -1,12 +1,13 @@
 import OSS, {PutObjectResult} from 'ali-oss';
-import {info, warning} from '@actions/core';
+import {info, setFailed} from '@actions/core';
 import {create as createGlobber, Globber} from '@actions/glob';
 import {credentials, homeDir} from './constants';
+import {join} from 'path';
 
 async function upload(): Promise<void> {
   try {
     const client: OSS = new OSS(credentials);
-    const uploadDir: Globber = await createGlobber(homeDir);
+    const uploadDir: Globber = await createGlobber(join(homeDir, '**/*.*'));
     const localFiles: string[] = await uploadDir.glob();
     const size: number = localFiles.length;
     let index: number = 0;
@@ -20,8 +21,8 @@ async function upload(): Promise<void> {
       info(`\u001b[38;5;6m>> [${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);
     }
     info(`${index} files uploaded ✅`);
-  } catch (error) {
-    warning(error.message);
+  } catch (e) {
+    setFailed(e.message);
   }
 }
 
