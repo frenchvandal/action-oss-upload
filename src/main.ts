@@ -2,12 +2,11 @@ import OSS, {PutObjectResult} from 'ali-oss';
 import {info, warning} from '@actions/core';
 import {create as createGlobber, Globber} from '@actions/glob';
 import {credentials, homeDir} from './constants';
-import {join} from 'path';
 
 async function upload(): Promise<void> {
   try {
     const client: OSS = new OSS(credentials);
-    const uploadDir: Globber = await createGlobber(join(homeDir, '**/*.*'));
+    const uploadDir: Globber = await createGlobber(homeDir);
     const localFiles: string[] = await uploadDir.glob();
     const size: number = localFiles.length;
     let index: number = 0;
