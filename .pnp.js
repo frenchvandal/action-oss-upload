@@ -41,7 +41,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@actions/glob", "npm:0.1.1"],
             ["@types/ali-oss", "npm:6.0.7"],
             ["@types/jest", "npm:26.0.20"],
-            ["@types/node", "npm:14.14.28"],
+            ["@types/node", "npm:14.14.31"],
             ["@vercel/ncc", "npm:0.27.0"],
             ["ali-oss", "npm:6.13.2"],
             ["jest", "npm:26.6.3"],
@@ -973,10 +973,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           ],
           "linkType": "HARD",
         }],
-        ["npm:14.14.28", {
-          "packageLocation": "./.yarn/cache/@types-node-npm-14.14.28-f643c75c74-e750df4d5e.zip/node_modules/@types/node/",
+        ["npm:14.14.31", {
+          "packageLocation": "./.yarn/cache/@types-node-npm-14.14.31-4f1a9dff64-635dc8a089.zip/node_modules/@types/node/",
           "packageDependencies": [
-            ["@types/node", "npm:14.14.28"]
+            ["@types/node", "npm:14.14.31"]
           ],
           "linkType": "HARD",
         }]
@@ -1093,7 +1093,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@actions/glob", "npm:0.1.1"],
             ["@types/ali-oss", "npm:6.0.7"],
             ["@types/jest", "npm:26.0.20"],
-            ["@types/node", "npm:14.14.28"],
+            ["@types/node", "npm:14.14.31"],
             ["@vercel/ncc", "npm:0.27.0"],
             ["ali-oss", "npm:6.13.2"],
             ["jest", "npm:26.6.3"],
