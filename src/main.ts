@@ -21,7 +21,6 @@ async function upload(): Promise<void> {
     //  info(`\u001b[38;5;6m>> [${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);
     //}
     for await (const file of localFiles) {
-      info(file);
       const objectName: string = file.replace(homeDir, '');
       const response: PutObjectResult = await client.put(objectName, file);
       index++;
