@@ -1,6 +1,6 @@
 import {Options} from 'ali-oss';
 import {getInput} from '@actions/core';
-import {join,sep} from 'path';
+import {join, sep} from 'path';
 
 export const credentials: Options = {
   bucket: getInput('bucket'),
