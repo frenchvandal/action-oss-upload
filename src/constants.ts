@@ -1,4 +1,4 @@
-import OSS, {Options} from 'ali-oss';
+import {Options} from 'ali-oss';
 import {getInput} from '@actions/core';
 import {join} from 'path';
 
