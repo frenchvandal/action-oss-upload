@@ -10,3 +10,5 @@ export const credentials: Options = {
 };
 
 export const homeDir: string = join(process.cwd(), getInput('source'), '/');
+
+export const pattern: string = getInput('pattern');

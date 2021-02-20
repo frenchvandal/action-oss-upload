@@ -22,6 +22,10 @@ inputs:
   source:
     description: 'Source folder of files to upload'
     required: true
+  pattern:
+    description: 'Glob pattern for source folder'
+    required: false
+    default: '**/*.*'
 
 runs:
   using: 'node12'
