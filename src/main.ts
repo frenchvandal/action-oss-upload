@@ -2,6 +2,9 @@ import OSS, {PutObjectResult} from 'ali-oss';
 import {info, setFailed} from '@actions/core';
 import {create as createGlobber, Globber} from '@actions/glob';
 import {credentials, homeDir, pattern} from './constants';
+import {toNamespacedPath} from 'path';
+
+const IS_WINDOWS: boolean = process.platform === 'win32';
 
 async function upload(): Promise<void> {
   try {
@@ -13,7 +16,11 @@ async function upload(): Promise<void> {
     let percent: number = 0;
     info(`⬆️ ${size} files to upload`);
     for await (const file of localFiles) {
-      const objectName: string = file.replace(homeDir, '');
+      let objectName: string = file.replace(homeDir, '');
+      if (IS_WINDOWS) {
+        info(`${toNamespacedPath(objectName)}`);
+        objectName = objectName.replace(/\\/g, '/');
+      }
       const response: PutObjectResult = await client.put(objectName, file);
       index++;
       percent = (index / size) * 100;
