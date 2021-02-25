@@ -10,24 +10,24 @@ async function upload(): Promise<void> {
   try {
     const client: OSS = new OSS(credentials);
     const uploadDir: Globber = await createGlobber(homeDir.concat(pattern));
-    const localFiles: string[] = await uploadDir.glob();
+    let localFiles: string[] = await uploadDir.glob();
+    if (IS_WINDOWS) {
+      localFiles = localFiles.map(item => item.replace(/\\/g, '/'));
+    }
     const size: number = localFiles.length;
     let index: number = 0;
     let percent: number = 0;
     info(`⬆️ ${size} files to upload`);
     for await (const file of localFiles) {
-      let objectName: string = file.replace(homeDir, '');
-      if (IS_WINDOWS) {
-        objectName = objectName.replace(/\\/g, '/');
-      }
+      const objectName: string = file.replace(homeDir, '');
       const response: PutObjectResult = await client.put(objectName, file);
       index++;
       percent = (index / size) * 100;
       info(`\u001b[38;5;6m>> [${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);
     }
     info(`✅ ${index} files uploaded`);
-  } catch (error) {
-    setFailed(error.message);
+  } catch (e) {
+    setFailed(e.message);
   }
 }
 
