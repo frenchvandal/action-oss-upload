@@ -2,12 +2,12 @@ import OSS, {PutObjectResult} from 'ali-oss';
 import {info, setFailed} from '@actions/core';
 import {create as createGlobber, Globber} from '@actions/glob';
 import {credentials, homeDir, pattern} from './constants';
-import {toNamespacedPath} from 'path';
 
 const IS_WINDOWS: boolean = process.platform === 'win32';
 
 async function upload(): Promise<void> {
   try {
+    info(`Runner is ${process.env.RUNNER_OS}`);
     const client: OSS = new OSS(credentials);
     const uploadDir: Globber = await createGlobber(homeDir.concat(pattern));
     let localFiles: string[] = await uploadDir.glob();

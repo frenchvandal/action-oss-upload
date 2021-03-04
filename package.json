@@ -7,7 +7,7 @@
     "test": "jest --coverage",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
-    "pre-checkin": "yarn run format && yarn run build"
+    "pre-checkin": "npm run format && npm run build"
   },
   "repository": {
     "type": "git",
