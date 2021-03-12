@@ -1,6 +1,6 @@
 # https://help.github.com/en/articles/metadata-syntax-for-github-actions
 name: 'GitHub Action OSS Upload'
-description: "A GitHub Action to upload files to an Alibaba Cloud OSS bucket"
+description: 'A GitHub Action to upload files to an Alibaba Cloud OSS bucket'
 author: 'frenchvandal'
 branding:
   color: 'orange'
