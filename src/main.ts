@@ -1,10 +1,17 @@
-import Client from 'ali-oss';
 import {info, setFailed} from '@actions/core';
 import {create as createGlobber, Globber} from '@actions/glob';
-import {credentials, homeDir, pattern} from './constants';
+import {getInput, homeDir, pattern} from './constants';
 import {ObjectPutReturnType} from 'ali-oss/lib/types/object';
+import Client from 'ali-oss';
 
 const isWindows: boolean = process.platform === 'win32';
+
+const credentials = {
+  bucket: getInput('bucket'),
+  region: getInput('region'),
+  accessKeyId: getInput('accessKeyId'),
+  accessKeySecret: getInput('accessKeySecret'),
+};
 
 async function upload(): Promise<void> {
   try {
