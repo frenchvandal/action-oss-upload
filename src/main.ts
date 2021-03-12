@@ -1,7 +1,8 @@
-import Client, {PutObjectRequest, PutObjectResponse} from '@alicloud/oss-client';
+import Client from 'ali-oss';
 import {info, setFailed} from '@actions/core';
 import {create as createGlobber, Globber} from '@actions/glob';
 import {credentials, homeDir, pattern} from './constants';
+import {ObjectPutReturnType} from 'ali-oss/lib/types/object';
 
 const isWindows: boolean = process.platform === 'win32';
 
@@ -19,9 +20,7 @@ async function upload(): Promise<void> {
     info(`${size} files to upload`);
     for await (const file of localFiles) {
       const objectName: string = file.replace(homeDir, '');
-      const request: PutObjectRequest  = new PutObjectRequest({objectName, file});
-      let runtime: any;
-      const response: PutObjectResponse = await client.putObject(request, runtime);
+      const response: ObjectPutReturnType = await client.put(objectName, file);
       index++;
       percent = (index / size) * 100;
       info(
