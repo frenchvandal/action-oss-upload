@@ -14,7 +14,7 @@ const credentials: Options = {
 async function upload(): Promise<void> {
   try {
     const client: OSS = new OSS(credentials);
-    const uploadDir: Globber = await createGlobber(homeDir.concat(pattern));
+    const uploadDir: Globber = await createGlobber(homeDir.concat('**/*.*'));
     let localFiles: string[] = await uploadDir.glob();
     const size: number = localFiles.length;
     let index: number = 0;
