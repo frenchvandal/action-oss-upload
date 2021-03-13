@@ -1,13 +1,20 @@
 import {endGroup, getInput, info, startGroup} from '@actions/core'
 import {create, Globber} from '@actions/glob'
 import OSS, {Options, PutObjectResult} from 'ali-oss'
-import {join, posix, sep} from 'path'
+import {join, posix, sep, win32} from 'path'
 
 const isWindows: boolean = process.platform === 'win32'
 
-const homeDir: string = join(process.cwd(), getInput('source'), sep)
+const processSlash: string = sep
+const backwardSlash: string = win32.sep
+const forwardSlash: string = posix.sep
 
-const pattern: string = `**${sep}*.*`
+const homeDir: string = join(
+  process.cwd(),
+  getInput('source') || 'public',
+  processSlash,
+)
+const pattern: string = `**${processSlash}*.*`
 
 const credentials: Options = {
   accessKeyId: getInput('accessKeyId'),
@@ -37,8 +44,8 @@ const upload = async () => {
 
       if (isWindows) {
         objectName = objectName.replace(
-          new RegExp(`\\${sep}`, 'g'),
-          `${posix.sep}`,
+          new RegExp(`\\${backwardSlash}`, 'g'),
+          `${forwardSlash}`,
         )
       }
 
