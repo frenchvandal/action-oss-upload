@@ -48,9 +48,9 @@ const upload = async () => {
       percent = (index / size) * 100
 
       info(
-        `\u001b[38;5;6m>> [${index}/${size}, ${percent.toFixed(
-          2,
-        )}%] uploaded: ${response.name}`,
+        `\u001b[38;5;2m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${
+          response.name
+        }`,
       )
     }
     endGroup()
