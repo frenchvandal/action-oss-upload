@@ -2,11 +2,12 @@ import {info, setFailed} from '@actions/core';
 import {create as createGlobber, Globber} from '@actions/glob';
 import {getInput, homeDir, pattern} from './constants';
 import {ObjectPutReturnType} from 'ali-oss/lib/types/object';
+import {IOptions} from 'ali-oss/lib/types/params';
 import Client from 'ali-oss';
 
 const isWindows: boolean = process.platform === 'win32';
 
-const credentials = {
+const credentials: IOptions = {
   bucket: getInput('bucket'),
   region: getInput('region'),
   accessKeyId: getInput('accessKeyId'),
