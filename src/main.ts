@@ -1,8 +1,8 @@
 import {info, setFailed} from '@actions/core';
-import {create as createGlobber, Globber} from '@actions/glob';
+import {create, Globber} from '@actions/glob';
 import {getInput, homeDir, pattern} from './constants';
 import OSS, {Options, PutObjectResult} from 'ali-oss';
-import {basename} from 'path';
+import {posix} from 'path';
 
 const credentials: Options = {
   accessKeyId: getInput('accessKeyId'),
@@ -14,17 +14,16 @@ const credentials: Options = {
 async function upload(): Promise<void> {
   try {
     const client: OSS = new OSS(credentials);
-    const uploadDir: Globber = await createGlobber(homeDir.concat(pattern));
-    let localFiles: string[] = await uploadDir.glob();
-    const size: number = localFiles.length;
+    const uploadDir: Globber = await create(homeDir.concat(pattern));
+    const size: number = (await uploadDir.glob()).length;
     let index: number = 0;
     let percent: number = 0;
     info(`${size} files to upload`);
-    for await (const file of localFiles) {
-      const objectName: string = basename(file);
+    for await (const file of uploadDir.globGenerator()) {
+      const objectName: string = posix.basename(file);
+
       const response: PutObjectResult = await client.put(objectName, file);
-      //info(file);
-      //info(objectName);
+
       index++;
       percent = (index / size) * 100;
       info(
@@ -34,8 +33,8 @@ async function upload(): Promise<void> {
       );
     }
     info(`${index} files uploaded`);
-  } catch (e) {
-    setFailed(e.message);
+  } catch (error) {
+    setFailed(error.message);
   }
 }
 
