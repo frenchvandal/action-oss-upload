@@ -3,7 +3,7 @@ import {create, Globber} from '@actions/glob';
 import OSS, {Options, PutObjectResult} from 'ali-oss';
 import {join, posix, sep} from 'path';
 
-const isWindows = process.platform === 'win32';
+const isWindows: boolean = process.platform === 'win32';
 
 const homeDir: string = join(process.cwd(), getInput('source'), sep);
 
