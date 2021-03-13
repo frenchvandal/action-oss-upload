@@ -35,7 +35,7 @@ async function upload(): Promise<void> {
     for await (const file of localFiles) {
       let objectName: string = file.replace(homeDir, '');
 
-      if (isWindows) objectName.replace(/\\/g, '/');
+      if (isWindows) objectName = objectName.replace(/\\/g, '/');
 
       info(objectName);
       const response: PutObjectResult = await client.put(objectName, file);
