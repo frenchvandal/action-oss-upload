@@ -1,4 +1,4 @@
-import {info, setFailed} from '@actions/core';
+import {error, info, setFailed} from '@actions/core';
 import {create as createGlobber, Globber} from '@actions/glob';
 import {getInput, homeDir, pattern} from './constants';
 import {ObjectPutReturnType} from 'ali-oss/lib/types/object';
@@ -39,6 +39,7 @@ async function upload(): Promise<void> {
     }
     info(`${index} files uploaded`);
   } catch (e) {
+    error(e.message);
     setFailed(e.message);
   }
 }
