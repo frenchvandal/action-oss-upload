@@ -2,7 +2,7 @@ import {getInput} from '@actions/core';
 import {posix} from 'path';
 
 export const homeDir: string = posix.join(
-  process.cwd(),
+  posix.normalize(process.cwd()),
   getInput('source'),
   posix.sep,
 );
