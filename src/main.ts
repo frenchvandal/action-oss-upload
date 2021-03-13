@@ -7,7 +7,7 @@ const isWindows: boolean = process.platform === 'win32';
 
 const homeDir: string = join(process.cwd(), getInput('source'), sep);
 
-const pattern: string = '**'.concat(sep, '*.*');
+const pattern: string = `**${sep}*.*`;
 
 const credentials: Options = {
   accessKeyId: getInput('accessKeyId'),
@@ -38,7 +38,7 @@ async function upload(): Promise<void> {
       let objectName: string = file.replace(homeDir, '');
       if (isWindows)
         objectName = objectName.replace(
-          new RegExp(`${sep}`, 'g'),
+          new RegExp(`\\${sep}`, 'g'),
           `${posix.sep}`,
         );
 

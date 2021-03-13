@@ -28,7 +28,7 @@ var __asyncValues = (undefined && undefined.__asyncValues) || function (o) {
 
 const isWindows = process.platform === 'win32';
 const homeDir = (0,path__WEBPACK_IMPORTED_MODULE_3__.join)(process.cwd(), (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('source'), path__WEBPACK_IMPORTED_MODULE_3__.sep);
-const pattern = '**'.concat(path__WEBPACK_IMPORTED_MODULE_3__.sep, '*.*');
+const pattern = `**${path__WEBPACK_IMPORTED_MODULE_3__.sep}*.*`;
 const credentials = {
     accessKeyId: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('accessKeyId'),
     accessKeySecret: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('accessKeySecret'),
@@ -52,7 +52,7 @@ async function upload() {
                 const file = localFiles_1_1.value;
                 let objectName = file.replace(homeDir, '');
                 if (isWindows)
-                    objectName = objectName.replace(new RegExp(`${path__WEBPACK_IMPORTED_MODULE_3__.sep}`, 'g'), `${path__WEBPACK_IMPORTED_MODULE_3__.posix.sep}`);
+                    objectName = objectName.replace(new RegExp(`\\${path__WEBPACK_IMPORTED_MODULE_3__.sep}`, 'g'), `${path__WEBPACK_IMPORTED_MODULE_3__.posix.sep}`);
                 const response = await client.put(objectName, file);
                 index++;
                 percent = (index / size) * 100;
