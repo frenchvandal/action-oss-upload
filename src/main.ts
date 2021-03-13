@@ -21,10 +21,10 @@ async function upload(): Promise<void> {
     let percent: number = 0;
     info(`${size} files to upload`);
     for await (const file of localFiles) {
-      const objectName: string = basename(file);
+      //const objectName: string = basename(file);
       //const response: PutObjectResult = await client.put(objectName, file);
       info(file);
-      info(objectName);
+      //info(objectName);
       index++;
       percent = (index / size) * 100;
       info(
