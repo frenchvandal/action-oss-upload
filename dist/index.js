@@ -36,7 +36,7 @@ const credentials = {
     region: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('region'),
 };
 const client = new (ali_oss__WEBPACK_IMPORTED_MODULE_2___default())(credentials);
-async function upload() {
+const upload = async () => {
     var e_1, _a;
     try {
         let index = 0;
@@ -71,7 +71,7 @@ async function upload() {
         const { setFailed } = await Promise.resolve(/* import() */).then(__nccwpck_require__.t.bind(__nccwpck_require__, 2186, 7));
         setFailed(error.message);
     }
-}
+};
 upload();
 //# sourceMappingURL=main.js.map
 

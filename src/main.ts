@@ -18,7 +18,7 @@ const credentials: Options = {
 
 const client: OSS = new OSS(credentials)
 
-async function upload(): Promise<void> {
+const upload = async () => {
   try {
     let index: number = 0
     let percent: number = 0
