@@ -1,8 +1,12 @@
 import {getInput} from '@actions/core';
-import {join, sep} from 'path';
+import {posix} from 'path';
 
-export const homeDir: string = join(process.cwd(), getInput('source'), sep);
+export const homeDir: string = posix.join(
+  process.cwd(),
+  getInput('source'),
+  posix.sep,
+);
 
-export const pattern: string = '**'.concat(sep, '*.*');
+export const pattern: string = '**'.concat(posix.sep, '*.*');
 
-export {getInput};
+export {getInput, posix};
