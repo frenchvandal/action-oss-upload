@@ -55,7 +55,7 @@ const upload = async () => {
       percent = (index / size) * 100
 
       info(
-        `\u001b[48;2;0;128;0m[${index}/${size}, ${percent.toFixed(
+        `\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(
           2,
         )}%] uploaded: ${response.name}`,
       )

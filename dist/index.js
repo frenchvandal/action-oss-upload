@@ -58,7 +58,7 @@ const upload = async () => {
                 const response = await client.put(objectName, file);
                 index++;
                 percent = (index / size) * 100;
-                (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[48;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);
+                (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
