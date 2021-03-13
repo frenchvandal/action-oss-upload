@@ -24,7 +24,7 @@ async function upload(): Promise<void> {
     info(`\u001b[38;5;6m>>pattern: ${pattern}`);
     let index: number = 0;
     let percent: number = 0;
-    const uploadDir: Globber = await create(homeDir.concat(pattern));
+    const uploadDir: Globber = await create(`${homeDir}${pattern}`);
     const size: number = (await uploadDir.glob()).length;
     const localFiles: AsyncGenerator<
       string,
@@ -35,7 +35,7 @@ async function upload(): Promise<void> {
     for await (const file of localFiles) {
       let objectName: string = file.replace(homeDir, '');
 
-      if (isWindows) objectName = file.replace(sep, posix.sep);
+      if (isWindows) objectName = file.replace(`/${sep}/g`, posix.sep);
 
       info(objectName);
       const response: PutObjectResult = await client.put(objectName, file);
