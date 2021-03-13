@@ -1,4 +1,4 @@
-import {getInput, info} from '@actions/core'
+import {endGroup, getInput, info, startGroup} from '@actions/core'
 import {create, Globber} from '@actions/glob'
 import OSS, {Options, PutObjectResult} from 'ali-oss'
 import {join, posix, sep} from 'path'
@@ -31,8 +31,7 @@ const upload = async () => {
       unknown
     > = uploadDir.globGenerator()
 
-    info(`${size} files to upload`)
-
+    startGroup(`${size} files to upload`)
     for await (const file of localFiles) {
       let objectName: string = file.replace(homeDir, '')
 
@@ -54,6 +53,7 @@ const upload = async () => {
         )}%] uploaded: ${response.name}`,
       )
     }
+    endGroup()
 
     info(`${index} files uploaded`)
   } catch (error) {
