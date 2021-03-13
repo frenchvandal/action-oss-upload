@@ -52,8 +52,7 @@ async function upload() {
                 const file = localFiles_1_1.value;
                 let objectName = file.replace(homeDir, '');
                 if (isWindows)
-                    objectName.replace(/\\/g, '/');
-                (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(objectName);
+                    objectName = objectName.replace(new RegExp(`${path__WEBPACK_IMPORTED_MODULE_3__.sep}`, 'g'), `${path__WEBPACK_IMPORTED_MODULE_3__.posix.sep}`);
                 const response = await client.put(objectName, file);
                 index++;
                 percent = (index / size) * 100;

@@ -31,16 +31,22 @@ async function upload(): Promise<void> {
       void,
       unknown
     > = uploadDir.globGenerator();
+
     info(`${size} files to upload`);
+
     for await (const file of localFiles) {
       let objectName: string = file.replace(homeDir, '');
-      if (isWindows) objectName.replace(/\\/g, '/');
+      if (isWindows)
+        objectName = objectName.replace(
+          new RegExp(`${sep}`, 'g'),
+          `${posix.sep}`,
+        );
 
-      info(objectName);
       const response: PutObjectResult = await client.put(objectName, file);
 
       index++;
       percent = (index / size) * 100;
+
       info(
         `\u001b[38;5;6m>> [${index}/${size}, ${percent.toFixed(
           2,
