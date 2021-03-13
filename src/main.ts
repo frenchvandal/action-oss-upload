@@ -2,6 +2,7 @@ import {getInput, info, setFailed} from '@actions/core';
 import {create, Globber} from '@actions/glob';
 import OSS, {Options, PutObjectResult} from 'ali-oss';
 import {join, posix, sep} from 'path';
+import {rmRF} from '@actions/io';
 
 const isWindows: boolean = process.platform === 'win32';
 
@@ -34,24 +35,39 @@ async function upload(): Promise<void> {
 
     info(`${size} files to upload`);
 
+    await rmRF(`${homeDir}browserconfig.xml`);
+
     for await (const file of localFiles) {
       let objectName: string = file.replace(homeDir, '');
-      if (isWindows)
+      if (isWindows) {
         objectName = objectName.replace(
           new RegExp(`\\${sep}`, 'g'),
           `${posix.sep}`,
         );
+      }
 
-      const response: PutObjectResult = await client.put(objectName, file);
-
-      index++;
-      percent = (index / size) * 100;
-
-      info(
-        `\u001b[38;5;6m>> [${index}/${size}, ${percent.toFixed(
-          2,
-        )}%] uploaded: ${response.name}`,
-      );
+      try {
+        index++;
+        percent = (index / size) * 100;
+        const response: PutObjectResult = await client.put(objectName, file);
+        info(
+          `\u001b[38;5;6m>> [${index}/${size}, ${percent.toFixed(
+            2,
+          )}%] uploaded: ${response.name}`,
+        );
+      } catch (err) {
+        if (err.code === 'ENOENT') {
+          const {warning} = await import('@actions/core');
+          warning(
+            `\u001b[38;5;6m>> [${index}/${size}, ${percent.toFixed(
+              2,
+            )}%] No such file ${file}`,
+          );
+        } else {
+          const {error} = await import('@actions/core');
+          error(err.message);
+        }
+      }
     }
     info(`${index} files uploaded`);
   } catch (error) {
