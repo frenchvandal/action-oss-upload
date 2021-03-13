@@ -8,10 +8,10 @@ import Client from 'ali-oss';
 const isWindows: boolean = process.platform === 'win32';
 
 const credentials: IOptions = {
-  bucket: getInput('bucket'),
-  region: getInput('region'),
   accessKeyId: getInput('accessKeyId'),
   accessKeySecret: getInput('accessKeySecret'),
+  bucket: getInput('bucket'),
+  region: getInput('region'),
 };
 
 async function upload(): Promise<void> {
