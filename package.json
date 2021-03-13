@@ -3,7 +3,7 @@
   "description": "This GitHub Action uploads generated files to an OSS bucket",
   "main": "lib/main.js",
   "scripts": {
-    "build": "tsc && ncc build -m",
+    "build": "tsc && ncc build",
     "test": "jest --coverage",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
