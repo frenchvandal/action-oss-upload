@@ -3,11 +3,7 @@ import {create, Globber} from '@actions/glob'
 import OSS, {Options, PutObjectResult} from 'ali-oss'
 import {join, posix, sep, win32} from 'path'
 
-const isWindows: boolean = process.platform === 'win32'
-
 const processSlash: string = sep
-const backwardSlash: string = win32.sep
-const forwardSlash: string = posix.sep
 
 const homeDir: string = join(
   process.cwd(),
@@ -38,6 +34,10 @@ const upload = async () => {
       unknown
     > = uploadDir.globGenerator()
 
+    const isWindows: boolean = process.platform === 'win32'
+    const backwardSlash: string = win32.sep
+    const forwardSlash: string = posix.sep
+
     startGroup(`${size} files to upload`)
     for await (const file of localFiles) {
       let objectName: string = file.replace(homeDir, '')
@@ -51,7 +51,7 @@ const upload = async () => {
 
       const response: PutObjectResult = await client.put(objectName, file)
 
-      index++
+      index += 1
       percent = (index / size) * 100
 
       info(
