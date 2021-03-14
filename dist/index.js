@@ -47,7 +47,7 @@ const upload = async () => {
         const isWindows = process.platform === 'win32';
         const backwardSlash = path__WEBPACK_IMPORTED_MODULE_3__.win32.sep;
         const forwardSlash = path__WEBPACK_IMPORTED_MODULE_3__.posix.sep;
-        (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup)(`\u001b[38;2;36,114,200m${size} files to upload`);
+        (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup)(`\u001b[38;2;252,127,0m${size} files to upload`);
         try {
             for (var localFiles_1 = __asyncValues(localFiles), localFiles_1_1; localFiles_1_1 = await localFiles_1.next(), !localFiles_1_1.done;) {
                 const file = localFiles_1_1.value;

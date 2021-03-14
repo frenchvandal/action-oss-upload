@@ -38,7 +38,7 @@ const upload = async () => {
     const backwardSlash: string = win32.sep;
     const forwardSlash: string = posix.sep;
 
-    startGroup(`\u001b[38;2;36,114,200m${size} files to upload`);
+    startGroup(`\u001b[38;2;252,127,0m${size} files to upload`);
     for await (const file of localFiles) {
       let objectName: string = file.replace(homeDir, '');
 
