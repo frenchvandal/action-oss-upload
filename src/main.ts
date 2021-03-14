@@ -38,7 +38,7 @@ const upload = async () => {
     const backwardSlash: string = win32.sep;
     const forwardSlash: string = posix.sep;
 
-    startGroup(`\u001b[1m${size} files to upload`);
+    startGroup(`\u001b[38;2;36,114,200m${size} files to upload`);
     for await (const file of localFiles) {
       let objectName: string = file.replace(homeDir, '');
 
@@ -62,7 +62,7 @@ const upload = async () => {
     }
     endGroup();
 
-    info(`\u001b[1m${index} files uploaded`);
+    info(`\u001b[38;2;0;128;0m${index} files uploaded`);
   } catch (error) {
     const { setFailed } = await import('@actions/core');
     setFailed(error.message);
