@@ -5,7 +5,11 @@ import { join, posix, sep, win32 } from 'path';
 
 const processSlash: string = sep;
 
-const homeDir: string = join(process.cwd(), getInput('source') || 'public', processSlash);
+const homeDir: string = join(
+  process.cwd(),
+  getInput('source') || 'public',
+  processSlash,
+);
 const pattern: string = `**${processSlash}*.*`;
 
 const credentials: Options = {
@@ -24,7 +28,11 @@ const upload = async () => {
 
     const uploadDir: Globber = await create(`${homeDir}${pattern}`);
     const size: number = (await uploadDir.glob()).length;
-    const localFiles: AsyncGenerator<string, void, unknown> = uploadDir.globGenerator();
+    const localFiles: AsyncGenerator<
+      string,
+      void,
+      unknown
+    > = uploadDir.globGenerator();
 
     const isWindows: boolean = process.platform === 'win32';
     const backwardSlash: string = win32.sep;
@@ -35,7 +43,10 @@ const upload = async () => {
       let objectName: string = file.replace(homeDir, '');
 
       if (isWindows) {
-        objectName = objectName.replace(new RegExp(`\\${backwardSlash}`, 'g'), `${forwardSlash}`);
+        objectName = objectName.replace(
+          new RegExp(`\\${backwardSlash}`, 'g'),
+          `${forwardSlash}`,
+        );
       }
 
       const response: PutObjectResult = await client.put(objectName, file);
@@ -44,7 +55,9 @@ const upload = async () => {
       percent = (index / size) * 100;
 
       info(
-        `\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`,
+        `\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(
+          2,
+        )}%] uploaded: ${response.name}`,
       );
     }
     endGroup();
