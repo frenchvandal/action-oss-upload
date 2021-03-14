@@ -62,7 +62,7 @@ const upload = async () => {
     }
     endGroup();
 
-    info(`\u001b[48;2;0;128;0m${index} files uploaded`);
+    info(`\u001b[1m${index} files uploaded`);
   } catch (error) {
     const { setFailed } = await import('@actions/core');
     setFailed(error.message);

@@ -69,7 +69,7 @@ const upload = async () => {
             finally { if (e_1) throw e_1.error; }
         }
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup)();
-        (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[48;2;0;128;0m${index} files uploaded`);
+        (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[1m${index} files uploaded`);
     }
     catch (error) {
         const { setFailed } = await Promise.resolve(/* import() */).then(__nccwpck_require__.t.bind(__nccwpck_require__, 2186, 7));
