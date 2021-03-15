@@ -19,6 +19,8 @@ jobs:
     - name: update node
       run: |
         npm install -g n latest
+        npm -v node -v
+        npm outdated
     - uses: actions/cache@v2
       with:
         path: ~/.npm
