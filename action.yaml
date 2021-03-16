@@ -20,7 +20,7 @@ inputs:
     description: 'Access Key secret'
     required: true
   source:
-    description: 'Source folder of files to upload'
+    description: 'Source folder of files to upload, relative to current working directory'
     required: false
   pattern:
     description: 'Glob pattern for source folder'

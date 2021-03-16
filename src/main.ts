@@ -7,16 +7,16 @@ const processSlash: string = sep;
 
 const homeDir: string = join(
   process.cwd(),
-  getInput('source') || 'public',
+  getInput('source', { required: false }) || 'public',
   processSlash,
 );
 const pattern: string = `**${processSlash}*.*`;
 
 const credentials: Options = {
-  accessKeyId: getInput('accessKeyId'),
-  accessKeySecret: getInput('accessKeySecret'),
-  bucket: getInput('bucket'),
-  region: getInput('region'),
+  accessKeyId: getInput('accessKeyId', { required: true }),
+  accessKeySecret: getInput('accessKeySecret', { required: true }),
+  bucket: getInput('bucket', { required: true }),
+  region: getInput('region', { required: true }),
 };
 
 const client: OSS = new OSS(credentials);

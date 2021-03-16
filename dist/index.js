@@ -27,13 +27,13 @@ var __asyncValues = (undefined && undefined.__asyncValues) || function (o) {
 
 
 const processSlash = path__WEBPACK_IMPORTED_MODULE_3__.sep;
-const homeDir = (0,path__WEBPACK_IMPORTED_MODULE_3__.join)(process.cwd(), (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('source') || 'public', processSlash);
+const homeDir = (0,path__WEBPACK_IMPORTED_MODULE_3__.join)(process.cwd(), (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('source', { required: false }) || 'public', processSlash);
 const pattern = `**${processSlash}*.*`;
 const credentials = {
-    accessKeyId: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('accessKeyId'),
-    accessKeySecret: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('accessKeySecret'),
-    bucket: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('bucket'),
-    region: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('region'),
+    accessKeyId: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('accessKeyId', { required: true }),
+    accessKeySecret: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('accessKeySecret', { required: true }),
+    bucket: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('bucket', { required: true }),
+    region: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('region', { required: true }),
 };
 const client = new (ali_oss__WEBPACK_IMPORTED_MODULE_2___default())(credentials);
 const upload = async () => {
