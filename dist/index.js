@@ -26,9 +26,9 @@ var __asyncValues = (undefined && undefined.__asyncValues) || function (o) {
 
 
 
+const isWindows = process.platform === 'win32';
 const processSlash = path__WEBPACK_IMPORTED_MODULE_3__.sep;
 const homeDir = (0,path__WEBPACK_IMPORTED_MODULE_3__.join)(process.cwd(), (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('source', { required: false }) || 'public', processSlash);
-const pattern = `**${processSlash}*.*`;
 const credentials = {
     accessKeyId: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('accessKeyId', { required: true }),
     accessKeySecret: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('accessKeySecret', { required: true }),
@@ -36,25 +36,26 @@ const credentials = {
     region: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('region', { required: true }),
 };
 const client = new (ali_oss__WEBPACK_IMPORTED_MODULE_2___default())(credentials);
-const upload = async () => {
+function objectify(filePath) {
+    let fileToObject = filePath.replace(homeDir, '');
+    if (isWindows) {
+        fileToObject = fileToObject.split(processSlash).join(path__WEBPACK_IMPORTED_MODULE_3__.posix.sep);
+    }
+    return fileToObject;
+}
+(async () => {
     var e_1, _a;
     try {
         let index = 0;
         let percent = 0;
-        const uploadDir = await (0,_actions_glob__WEBPACK_IMPORTED_MODULE_1__.create)(`${homeDir}${pattern}`);
+        const uploadDir = await (0,_actions_glob__WEBPACK_IMPORTED_MODULE_1__.create)(`${homeDir}**${processSlash}*.*`);
         const size = (await uploadDir.glob()).length;
         const localFiles = uploadDir.globGenerator();
-        const isWindows = process.platform === 'win32';
-        const backwardSlash = path__WEBPACK_IMPORTED_MODULE_3__.win32.sep;
-        const forwardSlash = path__WEBPACK_IMPORTED_MODULE_3__.posix.sep;
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup)(`${size} files to upload`);
         try {
             for (var localFiles_1 = __asyncValues(localFiles), localFiles_1_1; localFiles_1_1 = await localFiles_1.next(), !localFiles_1_1.done;) {
                 const file = localFiles_1_1.value;
-                let objectName = file.replace(homeDir, '');
-                if (isWindows) {
-                    objectName = objectName.replace(new RegExp(`\\${backwardSlash}`, 'g'), `${forwardSlash}`);
-                }
+                const objectName = objectify(file);
                 const response = await client.put(objectName, file);
                 index += 1;
                 percent = (index / size) * 100;
@@ -75,8 +76,7 @@ const upload = async () => {
         const { setFailed } = await Promise.resolve(/* import() */).then(__nccwpck_require__.t.bind(__nccwpck_require__, 2186, 7));
         setFailed(error.message);
     }
-};
-upload();
+})();
 //# sourceMappingURL=main.js.map
 
 /***/ }),

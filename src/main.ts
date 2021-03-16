@@ -1,7 +1,9 @@
 import { endGroup, getInput, info, startGroup } from '@actions/core';
 import { create, Globber } from '@actions/glob';
 import OSS, { Options, PutObjectResult } from 'ali-oss';
-import { join, posix, sep, win32 } from 'path';
+import { join, posix, sep } from 'path';
+
+const isWindows: boolean = process.platform === 'win32';
 
 const processSlash: string = sep;
 
@@ -10,7 +12,6 @@ const homeDir: string = join(
   getInput('source', { required: false }) || 'public',
   processSlash,
 );
-const pattern: string = `**${processSlash}*.*`;
 
 const credentials: Options = {
   accessKeyId: getInput('accessKeyId', { required: true }),
@@ -21,12 +22,22 @@ const credentials: Options = {
 
 const client: OSS = new OSS(credentials);
 
-const upload = async () => {
+function objectify(filePath: string): string {
+  let fileToObject: string = filePath.replace(homeDir, '');
+
+  if (isWindows) {
+    fileToObject = fileToObject.split(processSlash).join(posix.sep);
+  }
+
+  return fileToObject;
+}
+
+(async (): Promise<void> => {
   try {
     let index: number = 0;
     let percent: number = 0;
 
-    const uploadDir: Globber = await create(`${homeDir}${pattern}`);
+    const uploadDir: Globber = await create(`${homeDir}**${processSlash}*.*`);
     const size: number = (await uploadDir.glob()).length;
     const localFiles: AsyncGenerator<
       string,
@@ -34,20 +45,9 @@ const upload = async () => {
       unknown
     > = uploadDir.globGenerator();
 
-    const isWindows: boolean = process.platform === 'win32';
-    const backwardSlash: string = win32.sep;
-    const forwardSlash: string = posix.sep;
-
     startGroup(`${size} files to upload`);
     for await (const file of localFiles) {
-      let objectName: string = file.replace(homeDir, '');
-
-      if (isWindows) {
-        objectName = objectName.replace(
-          new RegExp(`\\${backwardSlash}`, 'g'),
-          `${forwardSlash}`,
-        );
-      }
+      const objectName: string = objectify(file);
 
       const response: PutObjectResult = await client.put(objectName, file);
 
@@ -67,6 +67,4 @@ const upload = async () => {
     const { setFailed } = await import('@actions/core');
     setFailed(error.message);
   }
-};
-
-upload();
+})();
