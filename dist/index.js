@@ -15,13 +15,6 @@ __nccwpck_require__.r(__webpack_exports__);
 /* harmony import */ var ali_oss__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__nccwpck_require__.n(ali_oss__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(5622);
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__nccwpck_require__.n(path__WEBPACK_IMPORTED_MODULE_3__);
-var __asyncValues = (undefined && undefined.__asyncValues) || function (o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator], i;
-    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-};
 
 
 
@@ -44,7 +37,6 @@ function objectify(filePath) {
     return fileToObject;
 }
 (async () => {
-    var e_1, _a;
     try {
         let index = 0;
         let percent = 0;
@@ -52,22 +44,12 @@ function objectify(filePath) {
         const size = (await uploadDir.glob()).length;
         const localFiles = uploadDir.globGenerator();
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup)(`${size} files to upload`);
-        try {
-            for (var localFiles_1 = __asyncValues(localFiles), localFiles_1_1; localFiles_1_1 = await localFiles_1.next(), !localFiles_1_1.done;) {
-                const file = localFiles_1_1.value;
-                const objectName = objectify(file);
-                const response = await client.put(objectName, file);
-                index += 1;
-                percent = (index / size) * 100;
-                (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (localFiles_1_1 && !localFiles_1_1.done && (_a = localFiles_1.return)) await _a.call(localFiles_1);
-            }
-            finally { if (e_1) throw e_1.error; }
+        for await (const file of localFiles) {
+            const objectName = objectify(file);
+            const response = await client.put(objectName, file);
+            index += 1;
+            percent = (index / size) * 100;
+            (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);
         }
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup)();
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`${index} files uploaded`);
