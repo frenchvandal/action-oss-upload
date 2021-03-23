@@ -19,7 +19,6 @@ __nccwpck_require__.r(__webpack_exports__);
 
 
 
-const isWindows = process.platform === 'win32';
 const processSlash = path__WEBPACK_IMPORTED_MODULE_3__.sep;
 const homeDir = (0,path__WEBPACK_IMPORTED_MODULE_3__.join)(process.cwd(), (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('source', { required: false }) || 'public', processSlash);
 const credentials = {
@@ -29,14 +28,6 @@ const credentials = {
     region: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('region', { required: true }),
 };
 const client = new (ali_oss__WEBPACK_IMPORTED_MODULE_2___default())(credentials);
-function objectify(filePath) {
-    let fileToObject = filePath.replace(homeDir, '');
-    if (isWindows) {
-        fileToObject = fileToObject.split(processSlash).join(path__WEBPACK_IMPORTED_MODULE_3__.posix.sep);
-        (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(path__WEBPACK_IMPORTED_MODULE_3__.posix.normalize(fileToObject));
-    }
-    return fileToObject;
-}
 (async () => {
     try {
         let index = 0;
@@ -46,9 +37,8 @@ function objectify(filePath) {
         const localFiles = uploadDir.globGenerator();
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup)(`${size} files to upload`);
         for await (const file of localFiles) {
-            const objectName = objectify(file);
+            const objectName = path__WEBPACK_IMPORTED_MODULE_3__.posix.relative(homeDir, file);
             const response = await client.put(objectName, file);
-            (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)((0,path__WEBPACK_IMPORTED_MODULE_3__.relative)(homeDir, file));
             index += 1;
             percent = (index / size) * 100;
             (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);
