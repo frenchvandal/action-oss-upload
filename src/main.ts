@@ -27,6 +27,7 @@ function objectify(filePath: string): string {
 
   if (isWindows) {
     fileToObject = fileToObject.split(processSlash).join(posix.sep);
+    info(posix.normalize(fileToObject));
   }
 
   return fileToObject;
@@ -34,8 +35,8 @@ function objectify(filePath: string): string {
 
 (async (): Promise<void> => {
   try {
-    let index: number = 0;
-    let percent: number = 0;
+    let index = 0;
+    let percent = 0;
 
     const uploadDir: Globber = await create(`${homeDir}**${processSlash}*.*`);
     const size: number = (await uploadDir.glob()).length;

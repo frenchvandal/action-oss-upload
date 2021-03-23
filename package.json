@@ -10,7 +10,7 @@
     "build": "tsc && ncc build --target es2020",
     "format": "prettier --write **/*.ts **/*.json **/*.yaml",
     "format-check": "prettier --check **/*.ts **/*.json **/*.yaml",
-    "pre-checkin": "npm run format && npm run build"
+    "pre-checkin": "concurrently \"npm:format\" \"npm:build\""
   },
   "repository": {
     "type": "git",
@@ -39,6 +39,7 @@
     "@typescript-eslint/eslint-plugin": "^4.15.2",
     "@typescript-eslint/parser": "^4.15.2",
     "@vercel/ncc": "^0.27.0",
+    "concurrently": "^6.0.0",
     "eslint": "^7.21.0",
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-github": "^4.1.1",

@@ -33,6 +33,7 @@ function objectify(filePath) {
     let fileToObject = filePath.replace(homeDir, '');
     if (isWindows) {
         fileToObject = fileToObject.split(processSlash).join(path__WEBPACK_IMPORTED_MODULE_3__.posix.sep);
+        (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(path__WEBPACK_IMPORTED_MODULE_3__.posix.normalize(fileToObject));
     }
     return fileToObject;
 }
