@@ -1,7 +1,7 @@
 import { endGroup, getInput, info, startGroup } from '@actions/core';
 import { create, Globber } from '@actions/glob';
 import OSS, { Options, PutObjectResult } from 'ali-oss';
-import { join, posix, sep } from 'path';
+import { join, posix, relative, sep } from 'path';
 
 const isWindows: boolean = process.platform === 'win32';
 
@@ -51,6 +51,8 @@ function objectify(filePath: string): string {
       const objectName: string = objectify(file);
 
       const response: PutObjectResult = await client.put(objectName, file);
+      info(file);
+      info(relative(file, homeDir));
 
       index += 1;
       percent = (index / size) * 100;
