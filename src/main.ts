@@ -1,7 +1,7 @@
 import { endGroup, getInput, info, startGroup } from '@actions/core';
 import { create, Globber } from '@actions/glob';
 import OSS, { Options, PutObjectResult } from 'ali-oss';
-import { join, posix, sep } from 'path';
+import { join, relative, sep } from 'path';
 
 const processSlash: string = sep;
 
@@ -35,7 +35,7 @@ const client: OSS = new OSS(credentials);
 
     startGroup(`${size} files to upload`);
     for await (const file of localFiles) {
-      const objectName: string = posix.relative(homeDir, file);
+      const objectName: string = relative(homeDir, file);
 
       //const response: PutObjectResult = await client.put(objectName, file);
 
