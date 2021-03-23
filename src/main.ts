@@ -37,7 +37,7 @@ const client: OSS = new OSS(credentials);
     for await (const file of localFiles) {
       const objectName: string = posix.relative(homeDir, file);
 
-      const response: PutObjectResult = await client.put(objectName, file);
+      //const response: PutObjectResult = await client.put(objectName, file);
 
       index += 1;
       percent = (index / size) * 100;
@@ -45,7 +45,7 @@ const client: OSS = new OSS(credentials);
       info(
         `\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(
           2,
-        )}%] uploaded: ${response.name}`,
+        )}%] uploaded: ${objectName}`,
       );
     }
     endGroup();
