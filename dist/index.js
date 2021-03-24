@@ -32,7 +32,7 @@ const client = new (ali_oss__WEBPACK_IMPORTED_MODULE_2___default())(credentials)
 function objectify(filePath) {
     let fileToObject = filePath.replace(homeDir, '');
     if (isWindows) {
-        fileToObject = path__WEBPACK_IMPORTED_MODULE_3__.posix.normalize(fileToObject);
+        fileToObject = fileToObject.split(processSlash).join(posix.sep);
     }
     return fileToObject;
 }
@@ -44,7 +44,10 @@ function objectify(filePath) {
         const size = (await uploadDir.glob()).length;
         const localFiles = uploadDir.globGenerator();
         for await (const file of localFiles) {
-            const objectName = objectify(file);
+            let objectName = (0,path__WEBPACK_IMPORTED_MODULE_3__.relative)(homeDir, file);
+            if (isWindows) {
+                objectName = objectName.split(processSlash).join(path__WEBPACK_IMPORTED_MODULE_3__.posix.sep);
+            }
             index += 1;
             percent = (index / size) * 100;
             (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${objectName}`);
