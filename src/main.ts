@@ -46,7 +46,7 @@ function objectify(filePath: string): string {
       unknown
     > = uploadDir.globGenerator();
 
-    startGroup(`${size} files to upload`);
+    //startGroup(`${size} files to upload`);
     for await (const file of localFiles) {
       const objectName: string = objectify(file);
 
@@ -61,7 +61,7 @@ function objectify(filePath: string): string {
         )}%] uploaded: ${objectName}`,
       );
     }
-    endGroup();
+    //endGroup();
 
     info(`${index} files uploaded`);
   } catch (error) {

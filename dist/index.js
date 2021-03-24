@@ -43,14 +43,12 @@ function objectify(filePath) {
         const uploadDir = await (0,_actions_glob__WEBPACK_IMPORTED_MODULE_1__.create)(`${homeDir}**${processSlash}*.*`);
         const size = (await uploadDir.glob()).length;
         const localFiles = uploadDir.globGenerator();
-        (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup)(`${size} files to upload`);
         for await (const file of localFiles) {
             const objectName = objectify(file);
             index += 1;
             percent = (index / size) * 100;
             (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${objectName}`);
         }
-        (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup)();
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`${index} files uploaded`);
     }
     catch (error) {
