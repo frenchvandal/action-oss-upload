@@ -1,7 +1,7 @@
 import { endGroup, getInput, info, startGroup } from '@actions/core';
 import { create, Globber } from '@actions/glob';
 import OSS, { Options, PutObjectResult } from 'ali-oss';
-import { join, normalize, posix, sep } from 'path';
+import { join, relative, posix, sep } from 'path';
 
 const isWindows: boolean = process.platform === 'win32';
 
@@ -26,8 +26,8 @@ function objectify(filePath: string): string {
   let fileToObject: string = filePath.replace(homeDir, '');
 
   if (isWindows) {
-    //fileToObject = fileToObject.split(processSlash).join(posix.sep);
-    fileToObject = posix.normalize(fileToObject);
+    fileToObject = fileToObject.split(processSlash).join(posix.sep);
+    //fileToObject = posix.normalize(fileToObject);
   }
 
   return fileToObject;
@@ -48,7 +48,11 @@ function objectify(filePath: string): string {
 
     //startGroup(`${size} files to upload`);
     for await (const file of localFiles) {
-      const objectName: string = objectify(file);
+      let objectName: string = relative(homeDir, file);
+
+      if (isWindows) {
+        objectName = objectName.split(processSlash).join(posix.sep);
+      }
 
       //const response: PutObjectResult = await client.put(objectName, file);
 
