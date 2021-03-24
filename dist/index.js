@@ -20,7 +20,7 @@ __nccwpck_require__.r(__webpack_exports__);
 
 
 const processSlash = path__WEBPACK_IMPORTED_MODULE_3__.sep;
-const homeDir = (0,path__WEBPACK_IMPORTED_MODULE_3__.join)(process.cwd(), (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('source', { required: false }) || 'public', processSlash);
+const homeDir = path__WEBPACK_IMPORTED_MODULE_3__.posix.normalize((0,path__WEBPACK_IMPORTED_MODULE_3__.join)(process.cwd(), (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('source', { required: false }) || 'public', processSlash));
 const credentials = {
     accessKeyId: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('accessKeyId', { required: true }),
     accessKeySecret: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('accessKeySecret', { required: true }),
@@ -37,8 +37,7 @@ const client = new (ali_oss__WEBPACK_IMPORTED_MODULE_2___default())(credentials)
         const localFiles = uploadDir.globGenerator();
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup)(`${size} files to upload`);
         for await (const file of localFiles) {
-            let objectName = (0,path__WEBPACK_IMPORTED_MODULE_3__.relative)(file, homeDir);
-            objectName = path__WEBPACK_IMPORTED_MODULE_3__.posix.normalize(objectName);
+            const objectName = path__WEBPACK_IMPORTED_MODULE_3__.posix.relative(homeDir, path__WEBPACK_IMPORTED_MODULE_3__.posix.normalize(file));
             index += 1;
             percent = (index / size) * 100;
             (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${objectName}`);

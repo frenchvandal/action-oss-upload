@@ -1,14 +1,16 @@
 import { endGroup, getInput, info, startGroup } from '@actions/core';
 import { create, Globber } from '@actions/glob';
 import OSS, { Options, PutObjectResult } from 'ali-oss';
-import { join, posix, relative, sep } from 'path';
+import { join, posix, sep } from 'path';
 
 const processSlash: string = sep;
 
-const homeDir: string = join(
-  process.cwd(),
-  getInput('source', { required: false }) || 'public',
-  processSlash,
+const homeDir: string = posix.normalize(
+  join(
+    process.cwd(),
+    getInput('source', { required: false }) || 'public',
+    processSlash,
+  ),
 );
 
 const credentials: Options = {
@@ -35,8 +37,8 @@ const client: OSS = new OSS(credentials);
 
     startGroup(`${size} files to upload`);
     for await (const file of localFiles) {
-      let objectName: string = relative(file, homeDir);
-      objectName = posix.normalize(objectName);
+      const objectName: string = posix.relative(homeDir, posix.normalize(file));
+
       //const response: PutObjectResult = await client.put(objectName, file);
 
       index += 1;
