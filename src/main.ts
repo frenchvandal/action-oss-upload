@@ -27,7 +27,7 @@ function objectify(filePath: string): string {
 
   if (isWindows) {
     //fileToObject = fileToObject.split(processSlash).join(posix.sep);
-    fileToObject = normalize(fileToObject);
+    fileToObject = posix.normalize(fileToObject);
   }
 
   return fileToObject;

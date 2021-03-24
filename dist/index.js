@@ -32,7 +32,7 @@ const client = new (ali_oss__WEBPACK_IMPORTED_MODULE_2___default())(credentials)
 function objectify(filePath) {
     let fileToObject = filePath.replace(homeDir, '');
     if (isWindows) {
-        fileToObject = (0,path__WEBPACK_IMPORTED_MODULE_3__.normalize)(fileToObject);
+        fileToObject = path__WEBPACK_IMPORTED_MODULE_3__.posix.normalize(fileToObject);
     }
     return fileToObject;
 }
