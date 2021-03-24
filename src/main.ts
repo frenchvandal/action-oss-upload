@@ -35,11 +35,8 @@ const client: OSS = new OSS(credentials);
 
     startGroup(`${size} files to upload`);
     for await (const file of localFiles) {
-      const objectName: string = relative(
-        posix.normalize(file),
-        posix.normalize(homeDir),
-      );
-
+      let objectName: string = relative(file, homeDir);
+      objectName = posix.normalize(objectName);
       //const response: PutObjectResult = await client.put(objectName, file);
 
       index += 1;

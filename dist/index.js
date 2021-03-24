@@ -37,7 +37,8 @@ const client = new (ali_oss__WEBPACK_IMPORTED_MODULE_2___default())(credentials)
         const localFiles = uploadDir.globGenerator();
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup)(`${size} files to upload`);
         for await (const file of localFiles) {
-            const objectName = (0,path__WEBPACK_IMPORTED_MODULE_3__.relative)(path__WEBPACK_IMPORTED_MODULE_3__.posix.normalize(file), path__WEBPACK_IMPORTED_MODULE_3__.posix.normalize(homeDir));
+            let objectName = (0,path__WEBPACK_IMPORTED_MODULE_3__.relative)(file, homeDir);
+            objectName = path__WEBPACK_IMPORTED_MODULE_3__.posix.normalize(objectName);
             index += 1;
             percent = (index / size) * 100;
             (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${objectName}`);
