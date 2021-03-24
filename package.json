@@ -8,9 +8,11 @@
   },
   "scripts": {
     "build": "tsc && ncc build --target es2020",
+    "lint": "eslint ./src/**/*.ts",
+    "lint:fix": "eslint --fix ./src/**/*.ts",
     "format": "prettier --write **/*.ts **/*.json **/*.yaml",
     "format-check": "prettier --check **/*.ts **/*.json **/*.yaml",
-    "pre-checkin": "concurrently \"npm:format\" \"npm:build\""
+    "pre-checkin": "concurrently \"npm:format\" \"npm:lint:fix\" \"npm:build\""
   },
   "repository": {
     "type": "git",

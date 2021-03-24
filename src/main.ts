@@ -3,14 +3,14 @@ import { create, Globber } from '@actions/glob';
 import OSS, { Options, PutObjectResult } from 'ali-oss';
 import { join, posix, sep } from 'path';
 
+const isWindows: boolean = process.platform === 'win32';
+
 const processSlash: string = sep;
 
-const homeDir: string = posix.normalize(
-  join(
-    process.cwd(),
-    getInput('source', { required: false }) || 'public',
-    processSlash,
-  ),
+const homeDir: string = join(
+  process.cwd(),
+  getInput('source', { required: false }) || 'public',
+  processSlash,
 );
 
 const credentials: Options = {
@@ -21,6 +21,17 @@ const credentials: Options = {
 };
 
 const client: OSS = new OSS(credentials);
+
+function objectify(filePath: string): string {
+  let fileToObject: string = filePath.replace(homeDir, '');
+
+  if (isWindows) {
+    //fileToObject = fileToObject.split(processSlash).join(posix.sep);
+    fileToObject = posix.normalize(fileToObject);
+  }
+
+  return fileToObject;
+}
 
 (async (): Promise<void> => {
   try {
@@ -37,7 +48,7 @@ const client: OSS = new OSS(credentials);
 
     startGroup(`${size} files to upload`);
     for await (const file of localFiles) {
-      const objectName: string = posix.relative(homeDir, posix.normalize(file));
+      const objectName: string = objectify(file);
 
       //const response: PutObjectResult = await client.put(objectName, file);
 
