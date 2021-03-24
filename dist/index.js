@@ -21,6 +21,7 @@ __nccwpck_require__.r(__webpack_exports__);
 
 const isWindows = process.platform === 'win32';
 const processSlash = path__WEBPACK_IMPORTED_MODULE_3__.sep;
+const forwardSlash = path__WEBPACK_IMPORTED_MODULE_3__.posix.sep;
 const homeDir = (0,path__WEBPACK_IMPORTED_MODULE_3__.join)(process.cwd(), (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('source', { required: false }) || 'public', processSlash);
 const credentials = {
     accessKeyId: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('accessKeyId', { required: true }),
@@ -30,9 +31,9 @@ const credentials = {
 };
 const client = new (ali_oss__WEBPACK_IMPORTED_MODULE_2___default())(credentials);
 function objectify(filePath) {
-    let fileToObject = filePath.replace(homeDir, '');
+    let fileToObject = (0,path__WEBPACK_IMPORTED_MODULE_3__.relative)(homeDir, filePath);
     if (isWindows) {
-        fileToObject = fileToObject.split(processSlash).join(posix.sep);
+        fileToObject = fileToObject.split(processSlash).join(forwardSlash);
     }
     return fileToObject;
 }
@@ -44,13 +45,11 @@ function objectify(filePath) {
         const size = (await uploadDir.glob()).length;
         const localFiles = uploadDir.globGenerator();
         for await (const file of localFiles) {
-            let objectName = (0,path__WEBPACK_IMPORTED_MODULE_3__.relative)(homeDir, file);
-            if (isWindows) {
-                objectName = objectName.split(processSlash).join(path__WEBPACK_IMPORTED_MODULE_3__.posix.sep);
-            }
+            const objectName = objectify(file);
+            const response = await client.put(objectName, file);
             index += 1;
             percent = (index / size) * 100;
-            (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${objectName}`);
+            (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);
         }
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`${index} files uploaded`);
     }

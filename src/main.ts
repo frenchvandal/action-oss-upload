@@ -6,6 +6,7 @@ import { join, relative, posix, sep } from 'path';
 const isWindows: boolean = process.platform === 'win32';
 
 const processSlash: string = sep;
+const forwardSlash: string = posix.sep;
 
 const homeDir: string = join(
   process.cwd(),
@@ -23,11 +24,10 @@ const credentials: Options = {
 const client: OSS = new OSS(credentials);
 
 function objectify(filePath: string): string {
-  let fileToObject: string = filePath.replace(homeDir, '');
+  let fileToObject: string = relative(homeDir, filePath);
 
   if (isWindows) {
-    fileToObject = fileToObject.split(processSlash).join(posix.sep);
-    //fileToObject = posix.normalize(fileToObject);
+    fileToObject = fileToObject.split(processSlash).join(forwardSlash);
   }
 
   return fileToObject;
@@ -48,13 +48,9 @@ function objectify(filePath: string): string {
 
     //startGroup(`${size} files to upload`);
     for await (const file of localFiles) {
-      let objectName: string = relative(homeDir, file);
+      const objectName: string = objectify(file);
 
-      if (isWindows) {
-        objectName = objectName.split(processSlash).join(posix.sep);
-      }
-
-      //const response: PutObjectResult = await client.put(objectName, file);
+      const response: PutObjectResult = await client.put(objectName, file);
 
       index += 1;
       percent = (index / size) * 100;
@@ -62,7 +58,7 @@ function objectify(filePath: string): string {
       info(
         `\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(
           2,
-        )}%] uploaded: ${objectName}`,
+        )}%] uploaded: ${response.name}`,
       );
     }
     //endGroup();
