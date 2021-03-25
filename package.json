@@ -14,10 +14,7 @@
     "format:check": "prettier --check **/*.ts **/*.json **/*.yaml",
     "pre-checkin": "concurrently \"npm:lint:fix\" \"npm:format\" \"npm:build\""
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/frenchvandal/action-oss-upload.git"
-  },
+  "repository": "github:frenchvandal/action-oss-upload",
   "keywords": [
     "actions",
     "hugo",
