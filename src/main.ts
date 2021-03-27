@@ -26,6 +26,15 @@ const client: OSS = new OSS(credentials);
 function objectify(filePath: string): string {
   let fileToObject: string = relative(homeDir, filePath);
 
+  info(
+    `homeDir: ${posix.normalize(homeDir)}
+    filePath: ${posix.normalize(filePath)}
+    relative: ${posix.relative(
+      posix.normalize(homeDir),
+      posix.normalize(filePath),
+    )}`,
+  );
+
   if (isWindows) {
     fileToObject = fileToObject.split(processSlash).join(forwardSlash);
   }
@@ -50,7 +59,7 @@ function objectify(filePath: string): string {
     for await (const file of localFiles) {
       const objectName: string = objectify(file);
 
-      const response: PutObjectResult = await client.put(objectName, file);
+      //const response: PutObjectResult = await client.put(objectName, file);
 
       index += 1;
       percent = (index / size) * 100;
@@ -58,7 +67,7 @@ function objectify(filePath: string): string {
       info(
         `\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(
           2,
-        )}%] uploaded: ${response.name}`,
+        )}%] uploaded: ${objectName}`,
       );
     }
     endGroup();
