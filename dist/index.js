@@ -33,6 +33,7 @@ const client = new (ali_oss__WEBPACK_IMPORTED_MODULE_2___default())(credentials)
 function objectify(filePath) {
     let fileToObject = (0,path__WEBPACK_IMPORTED_MODULE_3__.relative)(homeDir, filePath);
     (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`fileToObject: ${fileToObject}`);
+    (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`normalize: ${(0,path__WEBPACK_IMPORTED_MODULE_3__.normalize)(fileToObject)}`);
     (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`posix normalize: ${path__WEBPACK_IMPORTED_MODULE_3__.posix.normalize(fileToObject)}`);
     (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`win32 normalize: ${path__WEBPACK_IMPORTED_MODULE_3__.win32.normalize(fileToObject)}`);
     if (isWindows) {
