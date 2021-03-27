@@ -26,8 +26,9 @@ const client: OSS = new OSS(credentials);
 function objectify(filePath: string): string {
   let fileToObject: string = relative(homeDir, filePath);
 
-  info(`fileToObject: ${fileToObject}`);
-  info(`normalize: ${normalize(fileToObject)}`);
+  info(`filePath: ${filePath}`);
+  info(`normalize filePath: ${normalize(filePath)}`);
+  info(`normalize filePath: ${posix.normalize(filePath)}`);
   info(`posix normalize: ${posix.normalize(fileToObject)}`);
   info(`win32 normalize: ${win32.normalize(fileToObject)}`);
 
