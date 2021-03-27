@@ -1,7 +1,7 @@
 import { endGroup, getInput, info, startGroup } from '@actions/core';
 import { create, Globber } from '@actions/glob';
 import OSS, { Options, PutObjectResult } from 'ali-oss';
-import { join, relative, posix, sep } from 'path';
+import { join, relative, posix, sep, win32 } from 'path';
 
 const isWindows: boolean = process.platform === 'win32';
 
@@ -26,14 +26,9 @@ const client: OSS = new OSS(credentials);
 function objectify(filePath: string): string {
   let fileToObject: string = relative(homeDir, filePath);
 
-  info(
-    `homeDir: ${posix.normalize(homeDir)}
-    filePath: ${posix.normalize(filePath)}
-    relative: ${posix.relative(
-      posix.normalize(homeDir),
-      posix.normalize(filePath),
-    )}`,
-  );
+  info(`fileToObject: ${fileToObject}`);
+  info(`posix normalize: ${posix.normalize(fileToObject)}`);
+  info(`win32 normalize: ${win32.normalize(fileToObject)}`);
 
   if (isWindows) {
     fileToObject = fileToObject.split(processSlash).join(forwardSlash);
