@@ -1,7 +1,7 @@
 import { endGroup, getInput, info, startGroup } from '@actions/core';
 import { create, Globber } from '@actions/glob';
 import OSS, { Options, PutObjectResult } from 'ali-oss';
-import { join, normalize, relative, posix, sep, win32 } from 'path';
+import { join, relative, posix, sep } from 'path';
 
 const isWindows: boolean = process.platform === 'win32';
 
@@ -25,12 +25,6 @@ const client: OSS = new OSS(credentials);
 
 function objectify(filePath: string): string {
   let fileToObject: string = relative(homeDir, filePath);
-
-  info(`filePath: ${filePath}`);
-  info(`normalize filePath: ${normalize(filePath)}`);
-  info(`normalize filePath: ${posix.normalize(filePath)}`);
-  info(`posix normalize: ${posix.normalize(fileToObject)}`);
-  info(`win32 normalize: ${win32.normalize(fileToObject)}`);
 
   if (isWindows) {
     fileToObject = fileToObject.split(processSlash).join(forwardSlash);
@@ -56,7 +50,7 @@ function objectify(filePath: string): string {
     for await (const file of localFiles) {
       const objectName: string = objectify(file);
 
-      //const response: PutObjectResult = await client.put(objectName, file);
+      const response: PutObjectResult = await client.put(objectName, file);
 
       index += 1;
       percent = (index / size) * 100;
@@ -64,7 +58,7 @@ function objectify(filePath: string): string {
       info(
         `\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(
           2,
-        )}%] uploaded: ${objectName}`,
+        )}%] uploaded: ${response.name}`,
       );
     }
     endGroup();
