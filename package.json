@@ -12,7 +12,7 @@
     "lint:fix": "eslint --fix ./src/**/*.ts",
     "format": "prettier --write **/*.ts **/*.json **/*.yaml",
     "format:check": "prettier --check **/*.ts **/*.json **/*.yaml",
-    "pre-checkin": "concurrently \"npm:lint:fix\" \"npm:format\" \"npm:build\""
+    "pre-checkin": "concurrently \"npm:format\" \"npm:build\""
   },
   "repository": "github:frenchvandal/action-oss-upload",
   "keywords": [
@@ -29,7 +29,7 @@
   "dependencies": {
     "@actions/core": "^1.2.6",
     "@actions/glob": "^0.1.1",
-    "ali-oss": "^6.13.2",
+    "ali-oss": "^6.15.0",
     "path": "^0.12.7"
   },
   "devDependencies": {
