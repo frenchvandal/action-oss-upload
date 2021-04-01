@@ -18,10 +18,6 @@
       "options": { "parser": "markdown" }
     },
     {
-      "files": "*.md",
-      "options": { "proseWrap": "preserve" }
-    },
-    {
       "files": ["*.yml", "*.yaml"],
       "options": { "parser": "yaml" }
     }
