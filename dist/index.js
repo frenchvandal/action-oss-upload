@@ -260,6 +260,7 @@ exports.getInput = getInput;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setOutput(name, value) {
+    process.stdout.write(os.EOL);
     command_1.issueCommand('set-output', { name }, value);
 }
 exports.setOutput = setOutput;
@@ -2662,6 +2663,7 @@ proto.listBuckets = async function listBuckets(query = {}, options = {}) {
         name: item.Name,
         region: item.Location,
         creationDate: item.CreationDate,
+        storageClass: item.StorageClass,
         StorageClass: item.StorageClass,
         tag: formatTag(item)
       }));
@@ -3127,11 +3129,11 @@ proto.authorization = function authorization(method, resource, subres, headers) 
  */
 
 proto.request = async function (params) {
-  const isAvailableStream = params.stream ? params.stream.readable : true;
-  if (this.options.retryMax && isAvailableStream) {
-    this.request = retry(request.bind(this), this.options.retryMax, {
-      errorHandler: (err) => {
-        const _errHandle = (_err) => {
+  if (this.options.retryMax) {
+    return await retry(request.bind(this), this.options.retryMax, {
+      errorHandler: err => {
+        const _errHandle = _err => {
+          if (params.stream) return false;
           const statusErr = [-1, -2].includes(_err.status);
           const requestErrorRetryHandle = this.options.requestErrorRetryHandle || (() => true);
           return statusErr && requestErrorRetryHandle(_err);
@@ -3139,12 +3141,10 @@ proto.request = async function (params) {
         if (_errHandle(err)) return true;
         return false;
       }
-    });
+    })(params);
   } else {
-    this.request = request.bind(this);
+    return await request.call(this, params);
   }
-
-  return await this.request(params);
 };
 
 async function request(params) {
@@ -3178,7 +3178,9 @@ async function request(params) {
       if (!this._setOptions || Date.now() - this._setOptions > 10000) {
         this._setOptions = Date.now();
         await setSTSToken.call(this);
-        return this.request(params);
+        if (!params.stream) {
+          return this.request(params);
+        }
       }
     }
 
@@ -4857,27 +4859,34 @@ function setEndpoint(endpoint, secure) {
 }
 
 module.exports = function (options) {
-  if (!options
-    || !options.accessKeyId
-    || !options.accessKeySecret) {
+  if (!options || !options.accessKeyId || !options.accessKeySecret) {
     throw new Error('require accessKeyId, accessKeySecret');
+  }
+  if (options.stsToken && !options.refreshSTSToken) {
+    console.warn(
+      "It's recommended to set `refreshSTSToken` to refresh stsToken、accessKeyId、accessKeySecret automatically when sts info expires"
+    );
   }
   if (options.bucket) {
     _checkBucketName(options.bucket);
   }
-  const opts = Object.assign({
-    region: 'oss-cn-hangzhou',
-    internal: false,
-    secure: false,
-    timeout: 60000,
-    bucket: null,
-    endpoint: null,
-    cname: false,
-    isRequestPay: false,
-    sldEnable: false,
-    headerEncoding: 'utf-8',
-    refreshSTSToken: null
-  }, options);
+  const opts = Object.assign(
+    {
+      region: 'oss-cn-hangzhou',
+      internal: false,
+      secure: false,
+      timeout: 60000,
+      bucket: null,
+      endpoint: null,
+      cname: false,
+      isRequestPay: false,
+      sldEnable: false,
+      headerEncoding: 'utf-8',
+      refreshSTSToken: null,
+      retryMax: 0
+    },
+    options
+  );
 
   opts.accessKeyId = opts.accessKeyId.trim();
   opts.accessKeySecret = opts.accessKeySecret.trim();
@@ -5360,9 +5369,12 @@ proto.initMultipartUpload = async function initMultipartUpload(name, options) {
  */
 proto.uploadPart = async function uploadPart(name, uploadId, partNo, file, start, end, options) {
   const data = {
-    stream: this._createStream(file, start, end),
     size: end - start
   };
+  const isBrowserEnv = process && process.browser;
+  isBrowserEnv
+    ? (data.content = await this._createBuffer(file, start, end))
+    : (data.stream = await this._createStream(file, start, end));
   return await this._uploadPart(name, uploadId, partNo, data, options);
 };
 
@@ -5386,7 +5398,9 @@ proto.uploadPart = async function uploadPart(name, uploadId, partNo, file, start
  *                   }
  */
 proto.completeMultipartUpload = async function completeMultipartUpload(name, uploadId, parts, options) {
-  const completeParts = parts.concat().sort((a, b) => a.number - b.number)
+  const completeParts = parts
+    .concat()
+    .sort((a, b) => a.number - b.number)
     .filter((item, index, arr) => !index || item.number !== arr[index - 1].number);
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<CompleteMultipartUpload>\n';
   for (let i = 0; i < completeParts.length; i++) {
@@ -5400,7 +5414,7 @@ proto.completeMultipartUpload = async function completeMultipartUpload(name, upl
 
   options = options || {};
   let opt = {};
-  opt = deepCopyWith(options, (_) => {
+  opt = deepCopyWith(options, _ => {
     if (isBuffer(_)) return null;
   });
   if (opt.headers) delete opt.headers['x-oss-server-side-encryption'];
@@ -5453,8 +5467,10 @@ proto._uploadPart = async function _uploadPart(name, uploadId, partNo, data, opt
   };
   const params = this._objectRequestParams('PUT', name, opt);
   params.mime = opt.mime;
-  params.stream = data.stream;
+  const isBrowserEnv = process && process.browser;
+  isBrowserEnv ? (params.content = data.content) : (params.stream = data.stream);
   params.successStatuses = [200];
+  params.disabledMD5 = options.disabledMD5;
 
   const result = await this.request(params);
 
@@ -5463,9 +5479,10 @@ proto._uploadPart = async function _uploadPart(name, uploadId, partNo, data, opt
       'Please set the etag of expose-headers in OSS \n https://help.aliyun.com/document_detail/32069.html'
     );
   }
-
-  data.stream = null;
-  params.stream = null;
+  if (data.stream) {
+    data.stream = null;
+    params.stream = null;
+  }
   return {
     name,
     etag: result.res.headers.etag,
@@ -7048,10 +7065,12 @@ function createRequest(params) {
         delHeader(headers, 'Content-Type');
     }
     if (params.content) {
-        headers['Content-MD5'] = crypto
-            .createHash('md5')
-            .update(Buffer.from(params.content, 'utf8'))
-            .digest('base64');
+        if (!params.disabledMD5) {
+            headers['Content-MD5'] = crypto
+                .createHash('md5')
+                .update(Buffer.from(params.content, 'utf8'))
+                .digest('base64');
+        }
         if (!headers['Content-Length']) {
             headers['Content-Length'] = params.content.length;
         }
@@ -7832,7 +7851,6 @@ module.exports = function (OssClient) {
 /***/ 107:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-
 const fs = __nccwpck_require__(5747);
 const is = __nccwpck_require__(5565);
 const util = __nccwpck_require__(1669);
@@ -7841,6 +7859,7 @@ const mime = __nccwpck_require__(9994);
 const { isFile } = __nccwpck_require__(7169);
 const { isArray } = __nccwpck_require__(1954);
 const { isBuffer } = __nccwpck_require__(5850);
+const { retry } = __nccwpck_require__(1514);
 
 const proto = exports;
 
@@ -7886,10 +7905,8 @@ proto.multipartUpload = async function multipartUpload(name, file, options) {
 
   const fileSize = await this._getFileSize(file);
   if (fileSize < minPartSize) {
-    const stream = this._createStream(file, 0, fileSize);
     options.contentLength = fileSize;
-
-    const result = await this.putStream(name, stream, options);
+    const result = await this.put(name, file, options);
     if (options && options.progress) {
       await options.progress(1);
     }
@@ -7946,73 +7963,85 @@ proto._resumeMultipart = async function _resumeMultipart(checkpoint, options) {
   if (this.isCancel()) {
     throw this._makeCancelEvent();
   }
-  const {
-    file, fileSize, partSize, uploadId, doneParts, name
-  } = checkpoint;
+  const { file, fileSize, partSize, uploadId, doneParts, name } = checkpoint;
 
   const partOffs = this._divideParts(fileSize, partSize);
   const numParts = partOffs.length;
-
-  let uploadPartJob = function uploadPartJob(self, partNo) {
-    // eslint-disable-next-line no-async-promise-executor
-    return new Promise(async (resolve, reject) => {
-      try {
-        if (!self.isCancel()) {
-          const pi = partOffs[partNo - 1];
-          const stream = self._createStream(file, pi.start, pi.end);
-          const data = {
-            stream,
-            size: pi.end - pi.start
-          };
-
-          if (isArray(self.multipartUploadStreams)) {
-            self.multipartUploadStreams.push(data.stream);
-          } else {
-            self.multipartUploadStreams = [data.stream];
-          }
-
-          const removeStreamFromMultipartUploadStreams = function () {
-            if (!stream.destroyed) {
-              stream.destroy();
-            }
-            const index = self.multipartUploadStreams.indexOf(stream);
-            if (index !== -1) {
-              self.multipartUploadStreams.splice(index, 1);
-            }
-          };
-
-          stream.on('close', removeStreamFromMultipartUploadStreams);
-          stream.on('error', removeStreamFromMultipartUploadStreams);
-
-          let result;
-          try {
-            result = await self._uploadPart(name, uploadId, partNo, data);
-          } catch (error) {
-            removeStreamFromMultipartUploadStreams();
-            if (error.status === 404) {
-              throw self._makeAbortEvent();
-            }
-            throw error;
-          }
+  let uploadPartJob = retry(
+    (self, partNo) => {
+      // eslint-disable-next-line no-async-promise-executor
+      return new Promise(async (resolve, reject) => {
+        try {
           if (!self.isCancel()) {
-            doneParts.push({
-              number: partNo,
-              etag: result.res.headers.etag
-            });
-            checkpoint.doneParts = doneParts;
+            const pi = partOffs[partNo - 1];
+            const stream = await self._createStream(file, pi.start, pi.end);
+            const data = {
+              stream,
+              size: pi.end - pi.start
+            };
 
-            if (options.progress) {
-              await options.progress(doneParts.length / numParts, checkpoint, result.res);
+            if (isArray(self.multipartUploadStreams)) {
+              self.multipartUploadStreams.push(data.stream);
+            } else {
+              self.multipartUploadStreams = [data.stream];
+            }
+
+            const removeStreamFromMultipartUploadStreams = function () {
+              if (!stream.destroyed) {
+                stream.destroy();
+              }
+              const index = self.multipartUploadStreams.indexOf(stream);
+              if (index !== -1) {
+                self.multipartUploadStreams.splice(index, 1);
+              }
+            };
+
+            stream.on('close', removeStreamFromMultipartUploadStreams);
+            stream.on('error', removeStreamFromMultipartUploadStreams);
+
+            let result;
+            try {
+              result = await self._uploadPart(name, uploadId, partNo, data, {
+                timeout: options.timeout
+              });
+            } catch (error) {
+              removeStreamFromMultipartUploadStreams();
+              if (error.status === 404) {
+                throw self._makeAbortEvent();
+              }
+              throw error;
+            }
+            if (!self.isCancel()) {
+              doneParts.push({
+                number: partNo,
+                etag: result.res.headers.etag
+              });
+              checkpoint.doneParts = doneParts;
+
+              if (options.progress) {
+                await options.progress(doneParts.length / numParts, checkpoint, result.res);
+              }
             }
           }
+          resolve();
+        } catch (err) {
+          err.partNum = partNo;
+          reject(err);
         }
-        resolve();
-      } catch (err) {
-        err.partNum = partNo;
-        reject(err);
+      });
+    },
+    this.options.retryMax,
+    {
+      errorHandler: err => {
+        const _errHandle = _err => {
+          const statusErr = [-1, -2].includes(_err.status);
+          const requestErrorRetryHandle = this.options.requestErrorRetryHandle || (() => true);
+          return statusErr && requestErrorRetryHandle(_err);
+        };
+        return !!_errHandle(err);
       }
-    });
-  };
+    }
+  );
 
   const all = Array.from(new Array(numParts), (x, i) => i + 1);
   const done = doneParts.map(p => p.number);
@@ -8042,7 +8071,9 @@ proto._resumeMultipart = async function _resumeMultipart(checkpoint, options) {
     }
 
     if (jobErr && jobErr.length > 0) {
-      jobErr[0].message = `Failed to upload some parts with error: ${jobErr[0].toString()} part_num: ${jobErr[0].partNum}`;
+      jobErr[0].message = `Failed to upload some parts with error: ${jobErr[0].toString()} part_num: ${
+        jobErr[0].partNum
+      }`;
       throw jobErr[0];
     }
   }
@@ -8058,7 +8089,7 @@ proto._getFileSize = async function _getFileSize(file) {
     return file.length;
   } else if (isFile(file)) {
     return file.size;
-  } if (is.string(file)) {
+  } else if (is.string(file)) {
     const stat = await this._statFile(file);
     return stat.size;
   }
@@ -8100,9 +8131,12 @@ WebFileReadStream.prototype.readFileAndPush = function readFileAndPush(size) {
 };
 
 WebFileReadStream.prototype._read = function _read(size) {
-  if ((this.file && this.start >= this.file.size) ||
-      (this.fileBuffer && this.start >= this.fileBuffer.length) ||
-      (this.finish) || (this.start === 0 && !this.file)) {
+  if (
+    (this.file && this.start >= this.file.size) ||
+    (this.fileBuffer && this.start >= this.fileBuffer.length) ||
+    this.finish ||
+    (this.start === 0 && !this.file)
+  ) {
     if (!this.finish) {
       this.fileBuffer = null;
       this.finish = true;
@@ -8167,7 +8201,9 @@ proto._getPartSize = function _getPartSize(fileSize, partSize) {
 
   if (partSize < safeSize) {
     partSize = safeSize;
-    console.warn(`partSize has been set to ${partSize}, because the partSize you provided causes partNumber to be greater than 10,000`);
+    console.warn(
+      `partSize has been set to ${partSize}, because the partSize you provided causes partNumber to be greater than 10,000`
+    );
   }
   return partSize;
 };
@@ -8205,6 +8241,7 @@ const callback = __nccwpck_require__(6725);
 const { Transform } = __nccwpck_require__(2413);
 const pump = __nccwpck_require__(8341);
 const { isBuffer } = __nccwpck_require__(5850);
+const { retry } = __nccwpck_require__(1514);
 
 const proto = exports;
 
@@ -8263,9 +8300,22 @@ proto.put = async function put(name, file, options) {
       throw new Error(`${file} is not file`);
     }
     options.mime = options.mime || mime.getType(path.extname(file));
-    const stream = fs.createReadStream(file);
     options.contentLength = await this._getFileSize(file);
-    return await this.putStream(name, stream, options);
+    const getStream = () => fs.createReadStream(file);
+    const putStreamStb = (objectName, makeStream, configOption) => {
+      return this.putStream(objectName, makeStream(), configOption);
+    };
+    return await retry(putStreamStb, this.options.retryMax, {
+      errorHandler: err => {
+        const _errHandle = _err => {
+          const statusErr = [-1, -2].includes(_err.status);
+          const requestErrorRetryHandle = this.options.requestErrorRetryHandle || (() => true);
+          return statusErr && requestErrorRetryHandle(_err);
+        };
+        if (_errHandle(err)) return true;
+        return false;
+      }
+    })(name, getStream, options);
   } else if (is.readableStream(file)) {
     return await this.putStream(name, file, options);
   } else {
@@ -10087,11 +10137,11 @@ function tryAutoDetect(){
 ;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var tslib_1 = __nccwpck_require__(9475);
-var es_proposals_1 = tslib_1.__importDefault(__nccwpck_require__(2207));
 var types_1 = tslib_1.__importDefault(__nccwpck_require__(2619));
 var shared_1 = tslib_1.__importDefault(__nccwpck_require__(4631));
+var es7_1 = tslib_1.__importDefault(__nccwpck_require__(5351));
 function default_1(fork) {
-    fork.use(es_proposals_1.default);
+    fork.use(es7_1.default);
     var types = fork.use(types_1.default);
     var defaults = fork.use(shared_1.default).defaults;
     var def = types.Type.def;
@@ -10103,15 +10153,55 @@ function default_1(fork) {
         .bases("Expression")
         .build("body")
         .field("body", [def("Statement")]);
+    def("Super")
+        .bases("Expression")
+        .build();
     def("BindExpression")
         .bases("Expression")
         .build("object", "callee")
         .field("object", or(def("Expression"), null))
         .field("callee", def("Expression"));
+    def("Decorator")
+        .bases("Node")
+        .build("expression")
+        .field("expression", def("Expression"));
+    def("Property")
+        .field("decorators", or([def("Decorator")], null), defaults["null"]);
+    def("MethodDefinition")
+        .field("decorators", or([def("Decorator")], null), defaults["null"]);
+    def("MetaProperty")
+        .bases("Expression")
+        .build("meta", "property")
+        .field("meta", def("Identifier"))
+        .field("property", def("Identifier"));
     def("ParenthesizedExpression")
         .bases("Expression")
         .build("expression")
         .field("expression", def("Expression"));
+    def("ImportSpecifier")
+        .bases("ModuleSpecifier")
+        .build("imported", "local")
+        .field("imported", def("Identifier"));
+    def("ImportDefaultSpecifier")
+        .bases("ModuleSpecifier")
+        .build("local");
+    def("ImportNamespaceSpecifier")
+        .bases("ModuleSpecifier")
+        .build("local");
+    def("ExportDefaultDeclaration")
+        .bases("Declaration")
+        .build("declaration")
+        .field("declaration", or(def("Declaration"), def("Expression")));
+    def("ExportNamedDeclaration")
+        .bases("Declaration")
+        .build("declaration", "specifiers", "source")
+        .field("declaration", or(def("Declaration"), null))
+        .field("specifiers", [def("ExportSpecifier")], defaults.emptyArray)
+        .field("source", or(def("Literal"), null), defaults["null"]);
+    def("ExportSpecifier")
+        .bases("ModuleSpecifier")
+        .build("local", "exported")
+        .field("exported", def("Identifier"));
     def("ExportNamespaceSpecifier")
         .bases("Specifier")
         .build("exported")
@@ -10120,6 +10210,11 @@ function default_1(fork) {
         .bases("Specifier")
         .build("exported")
         .field("exported", def("Identifier"));
+    def("ExportAllDeclaration")
+        .bases("Declaration")
+        .build("exported", "source")
+        .field("exported", or(def("Identifier"), null))
+        .field("source", def("Literal"));
     def("CommentBlock")
         .bases("Comment")
         .build("value", /*optional:*/ "leading", "trailing");
@@ -10255,6 +10350,15 @@ function default_1(fork) {
             .field("decorators", or([def("Decorator")], null), defaults["null"])
             .field("optional", or(Boolean, null), defaults["null"]);
     });
+    def("ClassPrivateProperty")
+        .bases("ClassProperty")
+        .build("key", "value")
+        .field("key", def("PrivateName"))
+        .field("value", or(def("Expression"), null), defaults["null"]);
+    def("PrivateName")
+        .bases("Expression", "Pattern")
+        .build("id")
+        .field("id", def("Identifier"));
     var ObjectPatternProperty = or(def("Property"), def("PropertyPattern"), def("SpreadPropertyPattern"), def("SpreadProperty"), // Used by Esprima
     def("ObjectProperty"), // Babel 6
     def("RestProperty") // Babel 6
@@ -10316,7 +10420,6 @@ module.exports = exports["default"];
 ;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var tslib_1 = __nccwpck_require__(9475);
-var core_operators_1 = __nccwpck_require__(7669);
 var types_1 = tslib_1.__importDefault(__nccwpck_require__(2619));
 var shared_1 = tslib_1.__importDefault(__nccwpck_require__(4631));
 function default_1(fork) {
@@ -10425,7 +10528,8 @@ function default_1(fork) {
     def("CatchClause")
         .bases("Node")
         .build("param", "guard", "body")
-        .field("param", def("Pattern"))
+        // https://github.com/tc39/proposal-optional-catch-binding
+        .field("param", or(def("Pattern"), null), defaults["null"])
         .field("guard", or(def("Expression"), null), defaults["null"])
         .field("body", def("BlockStatement"));
     def("WhileStatement")
@@ -10500,14 +10604,15 @@ function default_1(fork) {
         // Esprima doesn't bother with this field, presumably because it's
         // always true for unary operators.
         .field("prefix", Boolean, defaults["true"]);
-    var BinaryOperator = or.apply(void 0, core_operators_1.BinaryOperators);
+    var BinaryOperator = or("==", "!=", "===", "!==", "<", "<=", ">", ">=", "<<", ">>", ">>>", "+", "-", "*", "/", "%", "**", "&", // TODO Missing from the Parser API.
+    "|", "^", "in", "instanceof");
     def("BinaryExpression")
         .bases("Expression")
         .build("operator", "left", "right")
         .field("operator", BinaryOperator)
         .field("left", def("Expression"))
         .field("right", def("Expression"));
-    var AssignmentOperator = or.apply(void 0, core_operators_1.AssignmentOperators);
+    var AssignmentOperator = or("=", "+=", "-=", "*=", "/=", "%=", "<<=", ">>=", ">>>=", "|=", "^=", "&=");
     def("AssignmentExpression")
         .bases("Expression")
         .build("operator", "left", "right")
@@ -10521,7 +10626,7 @@ function default_1(fork) {
         .field("operator", UpdateOperator)
         .field("argument", def("Expression"))
         .field("prefix", Boolean);
-    var LogicalOperator = or.apply(void 0, core_operators_1.LogicalOperators);
+    var LogicalOperator = or("||", "&&");
     def("LogicalExpression")
         .bases("Expression")
         .build("operator", "left", "right")
@@ -10623,38 +10728,31 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 var tslib_1 = __nccwpck_require__(9475);
 var types_1 = tslib_1.__importDefault(__nccwpck_require__(2619));
 var shared_1 = tslib_1.__importDefault(__nccwpck_require__(4631));
-var es2020_1 = tslib_1.__importDefault(__nccwpck_require__(8975));
+var core_1 = tslib_1.__importDefault(__nccwpck_require__(6604));
 function default_1(fork) {
-    fork.use(es2020_1.default);
+    fork.use(core_1.default);
     var types = fork.use(types_1.default);
     var Type = types.Type;
     var def = types.Type.def;
     var or = Type.or;
     var shared = fork.use(shared_1.default);
     var defaults = shared.defaults;
-    def("AwaitExpression")
-        .build("argument", "all")
-        .field("argument", or(def("Expression"), null))
-        .field("all", Boolean, defaults["false"]);
-    // Decorators
-    def("Decorator")
-        .bases("Node")
-        .build("expression")
-        .field("expression", def("Expression"));
-    def("Property")
-        .field("decorators", or([def("Decorator")], null), defaults["null"]);
-    def("MethodDefinition")
-        .field("decorators", or([def("Decorator")], null), defaults["null"]);
-    // Private names
-    def("PrivateName")
-        .bases("Expression", "Pattern")
-        .build("id")
-        .field("id", def("Identifier"));
-    def("ClassPrivateProperty")
-        .bases("ClassProperty")
-        .build("key", "value")
-        .field("key", def("PrivateName"))
-        .field("value", or(def("Expression"), null), defaults["null"]);
+    // https://github.com/tc39/proposal-optional-chaining
+    // `a?.b` as per https://github.com/estree/estree/issues/146
+    def("OptionalMemberExpression")
+        .bases("MemberExpression")
+        .build("object", "property", "computed", "optional")
+        .field("optional", Boolean, defaults["true"]);
+    // a?.b()
+    def("OptionalCallExpression")
+        .bases("CallExpression")
+        .build("callee", "arguments", "optional")
+        .field("optional", Boolean, defaults["true"]);
+    // https://github.com/tc39/proposal-nullish-coalescing
+    // `a ?? b` as per https://github.com/babel/babylon/pull/761/files
+    var LogicalOperator = or("||", "&&", "??");
+    def("LogicalExpression")
+        .field("operator", LogicalOperator);
 }
 exports.default = default_1;
 module.exports = exports["default"];
@@ -10669,50 +10767,16 @@ module.exports = exports["default"];
 ;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var tslib_1 = __nccwpck_require__(9475);
-var core_operators_1 = __nccwpck_require__(7669);
-var es2019_1 = tslib_1.__importDefault(__nccwpck_require__(4761));
+var es7_1 = tslib_1.__importDefault(__nccwpck_require__(5351));
 var types_1 = tslib_1.__importDefault(__nccwpck_require__(2619));
-var shared_1 = tslib_1.__importDefault(__nccwpck_require__(4631));
 function default_1(fork) {
-    fork.use(es2019_1.default);
+    fork.use(es7_1.default);
     var types = fork.use(types_1.default);
     var def = types.Type.def;
-    var or = types.Type.or;
-    var shared = fork.use(shared_1.default);
-    var defaults = shared.defaults;
     def("ImportExpression")
         .bases("Expression")
         .build("source")
         .field("source", def("Expression"));
-    def("ExportAllDeclaration")
-        .build("source", "exported")
-        .field("source", def("Literal"))
-        .field("exported", or(def("Identifier"), null));
-    // Optional chaining
-    def("ChainElement")
-        .bases("Node")
-        .field("optional", Boolean, defaults["false"]);
-    def("CallExpression")
-        .bases("Expression", "ChainElement");
-    def("MemberExpression")
-        .bases("Expression", "ChainElement");
-    def("ChainExpression")
-        .bases("Expression")
-        .build("expression")
-        .field("expression", def("ChainElement"));
-    def("OptionalCallExpression")
-        .bases("CallExpression")
-        .build("callee", "arguments", "optional")
-        .field("optional", Boolean, defaults["true"]);
-    // Deprecated optional chaining type, doesn't work with babelParser@7.11.0 or newer
-    def("OptionalMemberExpression")
-        .bases("MemberExpression")
-        .build("object", "property", "computed", "optional")
-        .field("optional", Boolean, defaults["true"]);
-    // Nullish coalescing
-    var LogicalOperator = or.apply(void 0, tslib_1.__spreadArrays(core_operators_1.LogicalOperators, ["??"]));
-    def("LogicalExpression")
-        .field("operator", LogicalOperator);
 }
 exports.default = default_1;
 module.exports = exports["default"];
@@ -10740,7 +10804,7 @@ function default_1(fork) {
         .field("generator", Boolean, defaults["false"])
         .field("expression", Boolean, defaults["false"])
         .field("defaults", [or(def("Expression"), null)], defaults.emptyArray)
-        // Legacy
+        // TODO This could be represented as a RestElement in .params.
         .field("rest", or(def("Identifier"), null), defaults["null"]);
     // The ESTree way of representing a ...rest parameter.
     def("RestElement")
@@ -10754,11 +10818,11 @@ function default_1(fork) {
         .build("argument")
         .field("argument", def("Pattern"));
     def("FunctionDeclaration")
-        .build("id", "params", "body", "generator", "expression")
-        // May be `null` in the context of `export default function () {}`
-        .field("id", or(def("Identifier"), null));
+        .build("id", "params", "body", "generator", "expression");
     def("FunctionExpression")
         .build("id", "params", "body", "generator", "expression");
+    // The Parser API calls this ArrowExpression, but Esprima and all other
+    // actual parsers use ArrowFunctionExpression.
     def("ArrowFunctionExpression")
         .bases("Function", "Expression")
         .build("params", "body", "expression")
@@ -10821,6 +10885,14 @@ function default_1(fork) {
         .bases("Pattern")
         .build("elements")
         .field("elements", [or(def("Pattern"), null)]);
+    def("MethodDefinition")
+        .bases("Declaration")
+        .build("kind", "key", "value", "static")
+        .field("kind", or("constructor", "method", "get", "set"))
+        .field("key", def("Expression"))
+        .field("value", def("Function"))
+        .field("computed", Boolean, defaults["false"])
+        .field("static", Boolean, defaults["false"]);
     def("SpreadElement")
         .bases("Node")
         .build("argument")
@@ -10842,14 +10914,6 @@ function default_1(fork) {
         .build("left", "right")
         .field("left", def("Pattern"))
         .field("right", def("Expression"));
-    def("MethodDefinition")
-        .bases("Declaration")
-        .build("kind", "key", "value", "static")
-        .field("kind", or("constructor", "method", "get", "set"))
-        .field("key", def("Expression"))
-        .field("value", def("Function"))
-        .field("computed", Boolean, defaults["false"])
-        .field("static", Boolean, defaults["false"]);
     var ClassBodyElement = or(def("MethodDefinition"), def("VariableDeclarator"), def("ClassPropertyDefinition"), def("ClassProperty"));
     def("ClassProperty")
         .bases("Declaration")
@@ -10877,9 +10941,6 @@ function default_1(fork) {
         .field("id", or(def("Identifier"), null), defaults["null"])
         .field("body", def("ClassBody"))
         .field("superClass", or(def("Expression"), null), defaults["null"]);
-    def("Super")
-        .bases("Expression")
-        .build();
     // Specifier and ModuleSpecifier are abstract non-standard types
     // introduced for definitional convenience.
     def("Specifier").bases("Node");
@@ -10898,19 +10959,19 @@ function default_1(fork) {
         // optional in the Babel/Acorn AST format.
         .field("id", or(def("Identifier"), null), defaults["null"])
         .field("name", or(def("Identifier"), null), defaults["null"]);
+    // Like ModuleSpecifier, except type:"ImportSpecifier" and buildable.
     // import {<id [as name]>} from ...;
     def("ImportSpecifier")
         .bases("ModuleSpecifier")
-        .build("imported", "local")
-        .field("imported", def("Identifier"));
-    // import <id> from ...;
-    def("ImportDefaultSpecifier")
-        .bases("ModuleSpecifier")
-        .build("local");
+        .build("id", "name");
     // import <* as id> from ...;
     def("ImportNamespaceSpecifier")
         .bases("ModuleSpecifier")
-        .build("local");
+        .build("id");
+    // import <id> from ...;
+    def("ImportDefaultSpecifier")
+        .bases("ModuleSpecifier")
+        .build("id");
     def("ImportDeclaration")
         .bases("Declaration")
         .build("specifiers", "source", "importKind")
@@ -10919,24 +10980,6 @@ function default_1(fork) {
         .field("importKind", or("value", "type"), function () {
         return "value";
     });
-    def("ExportNamedDeclaration")
-        .bases("Declaration")
-        .build("declaration", "specifiers", "source")
-        .field("declaration", or(def("Declaration"), null))
-        .field("specifiers", [def("ExportSpecifier")], defaults.emptyArray)
-        .field("source", or(def("Literal"), null), defaults["null"]);
-    def("ExportSpecifier")
-        .bases("ModuleSpecifier")
-        .build("local", "exported")
-        .field("exported", def("Identifier"));
-    def("ExportDefaultDeclaration")
-        .bases("Declaration")
-        .build("declaration")
-        .field("declaration", or(def("Declaration"), def("Expression")));
-    def("ExportAllDeclaration")
-        .bases("Declaration")
-        .build("source")
-        .field("source", def("Literal"));
     def("TaggedTemplateExpression")
         .bases("Expression")
         .build("tag", "quasi")
@@ -10952,11 +10995,48 @@ function default_1(fork) {
         .build("value", "tail")
         .field("value", { "cooked": String, "raw": String })
         .field("tail", Boolean);
-    def("MetaProperty")
+}
+exports.default = default_1;
+module.exports = exports["default"];
+
+
+/***/ }),
+
+/***/ 5351:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+var tslib_1 = __nccwpck_require__(9475);
+var es6_1 = tslib_1.__importDefault(__nccwpck_require__(8127));
+var types_1 = tslib_1.__importDefault(__nccwpck_require__(2619));
+var shared_1 = tslib_1.__importDefault(__nccwpck_require__(4631));
+function default_1(fork) {
+    fork.use(es6_1.default);
+    var types = fork.use(types_1.default);
+    var def = types.Type.def;
+    var or = types.Type.or;
+    var defaults = fork.use(shared_1.default).defaults;
+    def("Function")
+        .field("async", Boolean, defaults["false"]);
+    def("SpreadProperty")
+        .bases("Node")
+        .build("argument")
+        .field("argument", def("Expression"));
+    def("ObjectExpression")
+        .field("properties", [or(def("Property"), def("SpreadProperty"), def("SpreadElement"))]);
+    def("SpreadPropertyPattern")
+        .bases("Pattern")
+        .build("argument")
+        .field("argument", def("Pattern"));
+    def("ObjectPattern")
+        .field("properties", [or(def("Property"), def("PropertyPattern"), def("SpreadPropertyPattern"))]);
+    def("AwaitExpression")
         .bases("Expression")
-        .build("meta", "property")
-        .field("meta", def("Identifier"))
-        .field("property", def("Identifier"));
+        .build("argument", "all")
+        .field("argument", or(def("Expression"), null))
+        .field("all", Boolean, defaults["false"]);
 }
 exports.default = default_1;
 module.exports = exports["default"];
@@ -10971,11 +11051,11 @@ module.exports = exports["default"];
 ;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var tslib_1 = __nccwpck_require__(9475);
-var es2020_1 = tslib_1.__importDefault(__nccwpck_require__(8975));
+var es7_1 = tslib_1.__importDefault(__nccwpck_require__(5351));
 var types_1 = tslib_1.__importDefault(__nccwpck_require__(2619));
 var shared_1 = tslib_1.__importDefault(__nccwpck_require__(4631));
 function default_1(fork) {
-    fork.use(es2020_1.default);
+    fork.use(es7_1.default);
     var types = fork.use(types_1.default);
     var defaults = fork.use(shared_1.default).defaults;
     var def = types.Type.def;
@@ -11028,12 +11108,12 @@ module.exports = exports["default"];
 ;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var tslib_1 = __nccwpck_require__(9475);
-var es_proposals_1 = tslib_1.__importDefault(__nccwpck_require__(2207));
+var es7_1 = tslib_1.__importDefault(__nccwpck_require__(5351));
 var type_annotations_1 = tslib_1.__importDefault(__nccwpck_require__(6278));
 var types_1 = tslib_1.__importDefault(__nccwpck_require__(2619));
 var shared_1 = tslib_1.__importDefault(__nccwpck_require__(4631));
 function default_1(fork) {
-    fork.use(es_proposals_1.default);
+    fork.use(es7_1.default);
     fork.use(type_annotations_1.default);
     var types = fork.use(types_1.default);
     var def = types.Type.def;
@@ -11055,13 +11135,7 @@ function default_1(fork) {
     def("VoidTypeAnnotation")
         .bases("FlowType")
         .build();
-    def("SymbolTypeAnnotation")
-        .bases("FlowType")
-        .build();
     def("NumberTypeAnnotation")
-        .bases("FlowType")
-        .build();
-    def("BigIntTypeAnnotation")
         .bases("FlowType")
         .build();
     def("NumberLiteralTypeAnnotation")
@@ -11075,11 +11149,6 @@ function default_1(fork) {
         .bases("FlowType")
         .build("value", "raw")
         .field("value", Number)
-        .field("raw", String);
-    def("BigIntLiteralTypeAnnotation")
-        .bases("FlowType")
-        .build("value", "raw")
-        .field("value", null)
         .field("raw", String);
     def("StringTypeAnnotation")
         .bases("FlowType")
@@ -11130,7 +11199,7 @@ function default_1(fork) {
     def("FunctionTypeParam")
         .bases("Node")
         .build("name", "typeAnnotation", "optional")
-        .field("name", or(def("Identifier"), null))
+        .field("name", def("Identifier"))
         .field("typeAnnotation", def("FlowType"))
         .field("optional", Boolean);
     def("ArrayTypeAnnotation")
@@ -11166,8 +11235,7 @@ function default_1(fork) {
         .field("id", def("Identifier"))
         .field("key", def("FlowType"))
         .field("value", def("FlowType"))
-        .field("variance", LegacyVariance, defaults["null"])
-        .field("static", Boolean, defaults["false"]);
+        .field("variance", LegacyVariance, defaults["null"]);
     def("ObjectTypeCallProperty")
         .bases("Node")
         .build("value")
@@ -11222,11 +11290,10 @@ function default_1(fork) {
         .field("params", [def("FlowType")]);
     def("TypeParameter")
         .bases("FlowType")
-        .build("name", "variance", "bound", "default")
+        .build("name", "variance", "bound")
         .field("name", String)
         .field("variance", LegacyVariance, defaults["null"])
-        .field("bound", or(def("TypeAnnotation"), null), defaults["null"])
-        .field("default", or(def("FlowType"), null), defaults["null"]);
+        .field("bound", or(def("TypeAnnotation"), null), defaults["null"]);
     def("ClassProperty")
         .field("variance", LegacyVariance, defaults["null"]);
     def("ClassImplements")
@@ -11261,20 +11328,19 @@ function default_1(fork) {
         .field("id", def("Identifier"))
         .field("typeParameters", or(def("TypeParameterDeclaration"), null))
         .field("right", def("FlowType"));
-    def("DeclareTypeAlias")
-        .bases("TypeAlias")
-        .build("id", "typeParameters", "right");
     def("OpaqueType")
         .bases("Declaration")
         .build("id", "typeParameters", "impltype", "supertype")
         .field("id", def("Identifier"))
         .field("typeParameters", or(def("TypeParameterDeclaration"), null))
         .field("impltype", def("FlowType"))
-        .field("supertype", or(def("FlowType"), null));
+        .field("supertype", def("FlowType"));
+    def("DeclareTypeAlias")
+        .bases("TypeAlias")
+        .build("id", "typeParameters", "right");
     def("DeclareOpaqueType")
-        .bases("OpaqueType")
-        .build("id", "typeParameters", "supertype")
-        .field("impltype", or(def("FlowType"), null));
+        .bases("TypeAlias")
+        .build("id", "typeParameters", "supertype");
     def("TypeCastExpression")
         .bases("Expression")
         .build("expression", "typeAnnotation")
@@ -11291,8 +11357,7 @@ function default_1(fork) {
     def("DeclareFunction")
         .bases("Statement")
         .build("id")
-        .field("id", def("Identifier"))
-        .field("predicate", or(def("FlowPredicate"), null), defaults["null"]);
+        .field("id", def("Identifier"));
     def("DeclareClass")
         .bases("InterfaceDeclaration")
         .build("id");
@@ -11310,17 +11375,13 @@ function default_1(fork) {
         .build("default", "declaration", "specifiers", "source")
         .field("default", Boolean)
         .field("declaration", or(def("DeclareVariable"), def("DeclareFunction"), def("DeclareClass"), def("FlowType"), // Implies default.
-    def("TypeAlias"), // Implies named type
-    def("DeclareOpaqueType"), // Implies named opaque type
-    def("InterfaceDeclaration"), null))
+    null))
         .field("specifiers", [or(def("ExportSpecifier"), def("ExportBatchSpecifier"))], defaults.emptyArray)
         .field("source", or(def("Literal"), null), defaults["null"]);
     def("DeclareExportAllDeclaration")
         .bases("Declaration")
         .build("source")
         .field("source", or(def("Literal"), null), defaults["null"]);
-    def("ImportDeclaration")
-        .field("importKind", or("value", "type", "typeof"), function () { return "value"; });
     def("FlowPredicate").bases("Flow");
     def("InferredPredicate")
         .bases("FlowPredicate")
@@ -11329,48 +11390,10 @@ function default_1(fork) {
         .bases("FlowPredicate")
         .build("value")
         .field("value", def("Expression"));
-    def("Function")
-        .field("predicate", or(def("FlowPredicate"), null), defaults["null"]);
     def("CallExpression")
         .field("typeArguments", or(null, def("TypeParameterInstantiation")), defaults["null"]);
     def("NewExpression")
         .field("typeArguments", or(null, def("TypeParameterInstantiation")), defaults["null"]);
-    // Enums
-    def("EnumDeclaration")
-        .bases("Declaration")
-        .build("id", "body")
-        .field("id", def("Identifier"))
-        .field("body", or(def("EnumBooleanBody"), def("EnumNumberBody"), def("EnumStringBody"), def("EnumSymbolBody")));
-    def("EnumBooleanBody")
-        .build("members", "explicitType")
-        .field("members", [def("EnumBooleanMember")])
-        .field("explicitType", Boolean);
-    def("EnumNumberBody")
-        .build("members", "explicitType")
-        .field("members", [def("EnumNumberMember")])
-        .field("explicitType", Boolean);
-    def("EnumStringBody")
-        .build("members", "explicitType")
-        .field("members", or([def("EnumStringMember")], [def("EnumDefaultedMember")]))
-        .field("explicitType", Boolean);
-    def("EnumSymbolBody")
-        .build("members")
-        .field("members", [def("EnumDefaultedMember")]);
-    def("EnumBooleanMember")
-        .build("id", "init")
-        .field("id", def("Identifier"))
-        .field("init", or(def("Literal"), Boolean));
-    def("EnumNumberMember")
-        .build("id", "init")
-        .field("id", def("Identifier"))
-        .field("init", def("Literal"));
-    def("EnumStringMember")
-        .build("id", "init")
-        .field("id", def("Identifier"))
-        .field("init", def("Literal"));
-    def("EnumDefaultedMember")
-        .build("id")
-        .field("id", def("Identifier"));
 }
 exports.default = default_1;
 module.exports = exports["default"];
@@ -11385,11 +11408,11 @@ module.exports = exports["default"];
 ;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var tslib_1 = __nccwpck_require__(9475);
-var es2020_1 = tslib_1.__importDefault(__nccwpck_require__(8975));
+var es7_1 = tslib_1.__importDefault(__nccwpck_require__(5351));
 var types_1 = tslib_1.__importDefault(__nccwpck_require__(2619));
 var shared_1 = tslib_1.__importDefault(__nccwpck_require__(4631));
 function default_1(fork) {
-    fork.use(es2020_1.default);
+    fork.use(es7_1.default);
     var types = fork.use(types_1.default);
     var def = types.Type.def;
     var or = types.Type.or;
@@ -11400,8 +11423,6 @@ function default_1(fork) {
         .field("name", or(def("JSXIdentifier"), def("JSXNamespacedName")))
         .field("value", or(def("Literal"), // attr="value"
     def("JSXExpressionContainer"), // attr={value}
-    def("JSXElement"), // attr=<div />
-    def("JSXFragment"), // attr=<></>
     null // attr= or just attr
     ), defaults["null"]);
     def("JSXIdentifier")
@@ -11428,15 +11449,14 @@ function default_1(fork) {
     def("JSXExpressionContainer")
         .bases("Expression")
         .build("expression")
-        .field("expression", or(def("Expression"), def("JSXEmptyExpression")));
-    var JSXChildren = [or(def("JSXText"), def("JSXExpressionContainer"), def("JSXSpreadChild"), def("JSXElement"), def("JSXFragment"), def("Literal") // Legacy: Esprima should return JSXText instead.
-        )];
+        .field("expression", def("Expression"));
     def("JSXElement")
         .bases("Expression")
         .build("openingElement", "closingElement", "children")
         .field("openingElement", def("JSXOpeningElement"))
         .field("closingElement", or(def("JSXClosingElement"), null), defaults["null"])
-        .field("children", JSXChildren, defaults.emptyArray)
+        .field("children", [or(def("JSXElement"), def("JSXExpressionContainer"), def("JSXFragment"), def("JSXText"), def("Literal") // TODO Esprima should return JSXText instead.
+        )], defaults.emptyArray)
         .field("name", JSXElementName, function () {
         // Little-known fact: the `this` object inside a default function
         // is none other than the partially-built object itself, and any
@@ -11452,39 +11472,37 @@ function default_1(fork) {
         return this.openingElement.attributes;
     }, true); // hidden from traversal
     def("JSXOpeningElement")
-        .bases("Node")
+        .bases("Node") // TODO Does this make sense? Can't really be an JSXElement.
         .build("name", "attributes", "selfClosing")
         .field("name", JSXElementName)
         .field("attributes", JSXAttributes, defaults.emptyArray)
         .field("selfClosing", Boolean, defaults["false"]);
     def("JSXClosingElement")
-        .bases("Node")
+        .bases("Node") // TODO Same concern.
         .build("name")
         .field("name", JSXElementName);
     def("JSXFragment")
         .bases("Expression")
-        .build("openingFragment", "closingFragment", "children")
-        .field("openingFragment", def("JSXOpeningFragment"))
-        .field("closingFragment", def("JSXClosingFragment"))
-        .field("children", JSXChildren, defaults.emptyArray);
+        .build("openingElement", "closingElement", "children")
+        .field("openingElement", def("JSXOpeningFragment"))
+        .field("closingElement", def("JSXClosingFragment"))
+        .field("children", [or(def("JSXElement"), def("JSXExpressionContainer"), def("JSXFragment"), def("JSXText"), def("Literal") // TODO Esprima should return JSXText instead.
+        )], defaults.emptyArray);
     def("JSXOpeningFragment")
-        .bases("Node")
+        .bases("Node") // TODO Same concern.
         .build();
     def("JSXClosingFragment")
-        .bases("Node")
+        .bases("Node") // TODO Same concern.
         .build();
     def("JSXText")
         .bases("Literal")
-        .build("value", "raw")
-        .field("value", String)
-        .field("raw", String, function () {
-        return this.value;
-    });
-    def("JSXEmptyExpression")
-        .bases("Node")
-        .build();
+        .build("value")
+        .field("value", String);
+    def("JSXEmptyExpression").bases("Expression").build();
+    // This PR has caused many people issues, but supporting it seems like a
+    // good idea anyway: https://github.com/babel/babel/pull/4988
     def("JSXSpreadChild")
-        .bases("Node")
+        .bases("Expression")
         .build("expression")
         .field("expression", def("Expression"));
 }
@@ -13522,8 +13540,6 @@ function scopePlugin(fork) {
         }
         else if ((namedTypes.SpreadElementPattern &&
             namedTypes.SpreadElementPattern.check(pattern)) ||
-            (namedTypes.RestElement &&
-                namedTypes.RestElement.check(pattern)) ||
             (namedTypes.SpreadPropertyPattern &&
                 namedTypes.SpreadPropertyPattern.check(pattern))) {
             addPattern(patternPath.get('argument'), bindings);
@@ -14421,10 +14437,7 @@ var tslib_1 = __nccwpck_require__(9475);
 var fork_1 = tslib_1.__importDefault(__nccwpck_require__(253));
 var core_1 = tslib_1.__importDefault(__nccwpck_require__(6604));
 var es6_1 = tslib_1.__importDefault(__nccwpck_require__(8127));
-var es2016_1 = tslib_1.__importDefault(__nccwpck_require__(8212));
-var es2017_1 = tslib_1.__importDefault(__nccwpck_require__(8128));
-var es2018_1 = tslib_1.__importDefault(__nccwpck_require__(2133));
-var es2019_1 = tslib_1.__importDefault(__nccwpck_require__(9452));
+var es7_1 = tslib_1.__importDefault(__nccwpck_require__(5351));
 var es2020_1 = tslib_1.__importDefault(__nccwpck_require__(8975));
 var jsx_1 = tslib_1.__importDefault(__nccwpck_require__(7572));
 var flow_1 = tslib_1.__importDefault(__nccwpck_require__(368));
@@ -14441,10 +14454,7 @@ var _a = fork_1.default([
     // Feel free to add to or remove from this list of extension modules to
     // configure the precise type hierarchy that you need.
     es6_1.default,
-    es2016_1.default,
-    es2017_1.default,
-    es2018_1.default,
-    es2019_1.default,
+    es7_1.default,
     es2020_1.default,
     jsx_1.default,
     flow_1.default,
@@ -14731,19 +14741,17 @@ function __importDefault(mod) {
     return (mod && mod.__esModule) ? mod : { default: mod };
 }
 
-function __classPrivateFieldGet(receiver, privateMap) {
-    if (!privateMap.has(receiver)) {
-        throw new TypeError("attempted to get private field on non-instance");
-    }
-    return privateMap.get(receiver);
+function __classPrivateFieldGet(receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 }
 
-function __classPrivateFieldSet(receiver, privateMap, value) {
-    if (!privateMap.has(receiver)) {
-        throw new TypeError("attempted to set private field on non-instance");
-    }
-    privateMap.set(receiver, value);
-    return value;
+function __classPrivateFieldSet(receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 }
 
 
@@ -47887,7 +47895,7 @@ function mapOptsToProxy(opts) {
 function ProxyAgent (opts) {
   if (!(this instanceof ProxyAgent)) return new ProxyAgent(opts);
   debug('creating new ProxyAgent instance: %o', opts);
-  Agent.call(this, connect);
+  Agent.call(this);
 
   if (opts) {
     var proxy = mapOptsToProxy(opts);
@@ -47902,7 +47910,7 @@ inherits(ProxyAgent, Agent);
  *
  */
 
-function connect (req, opts, fn) {
+ProxyAgent.prototype.callback = function(req, opts, fn) {
   var proxyOpts = this.proxy;
   var proxyUri = this.proxyUri;
   var proxyFn = this.proxyFn;
@@ -47936,7 +47944,9 @@ function connect (req, opts, fn) {
     agent.addRequest(req, opts);
   } else {
     // XXX: agent.callback() is an agent-base-ism
-    agent.callback(req, opts, fn);
+    agent.callback(req, opts)
+      .then(function(socket) { fn(null, socket); })
+      .catch(function(error) { fn(error); });
   }
 }
 
@@ -49404,6 +49414,7 @@ var stringify = function stringify(
             : prefix + (allowDots ? '.' + key : '[' + key + ']');
 
         sideChannel.set(object, true);
+        var valueSideChannel = getSideChannel();
         pushToArray(values, stringify(
             value,
             keyPrefix,
@@ -49419,7 +49430,7 @@ var stringify = function stringify(
             formatter,
             encodeValuesOnly,
             charset,
-            sideChannel
+            valueSideChannel
         ));
     }
 
@@ -53571,6 +53582,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SocksClientError = exports.SocksClient = void 0;
 const events_1 = __nccwpck_require__(8614);
 const net = __nccwpck_require__(1631);
 const ip = __nccwpck_require__(7547);
@@ -53579,14 +53591,15 @@ const constants_1 = __nccwpck_require__(9647);
 const helpers_1 = __nccwpck_require__(4324);
 const receivebuffer_1 = __nccwpck_require__(9740);
 const util_1 = __nccwpck_require__(5523);
+Object.defineProperty(exports, "SocksClientError", ({ enumerable: true, get: function () { return util_1.SocksClientError; } }));
 class SocksClient extends events_1.EventEmitter {
     constructor(options) {
         super();
-        this._options = Object.assign({}, options);
+        this.options = Object.assign({}, options);
         // Validate SocksClientOptions
         helpers_1.validateSocksClientOptions(options);
         // Default state
-        this.state = constants_1.SocksClientState.Created;
+        this.setState(constants_1.SocksClientState.Created);
     }
     /**
      * Creates a new SOCKS connection.
@@ -53597,16 +53610,27 @@ class SocksClient extends events_1.EventEmitter {
      * @returns { Promise }
      */
     static createConnection(options, callback) {
-        // Validate SocksClientOptions
-        helpers_1.validateSocksClientOptions(options, ['connect']);
         return new Promise((resolve, reject) => {
+            // Validate SocksClientOptions
+            try {
+                helpers_1.validateSocksClientOptions(options, ['connect']);
+            }
+            catch (err) {
+                if (typeof callback === 'function') {
+                    callback(err);
+                    return resolve(err); // Resolves pending promise (prevents memory leaks).
+                }
+                else {
+                    return reject(err);
+                }
+            }
             const client = new SocksClient(options);
             client.connect(options.existing_socket);
             client.once('established', (info) => {
                 client.removeAllListeners();
                 if (typeof callback === 'function') {
                     callback(null, info);
-                    resolve(); // Resolves pending promise (prevents memory leaks).
+                    resolve(info); // Resolves pending promise (prevents memory leaks).
                 }
                 else {
                     resolve(info);
@@ -53617,7 +53641,7 @@ class SocksClient extends events_1.EventEmitter {
                 client.removeAllListeners();
                 if (typeof callback === 'function') {
                     callback(err);
-                    resolve(); // Resolves pending promise (prevents memory leaks).
+                    resolve(err); // Resolves pending promise (prevents memory leaks).
                 }
                 else {
                     reject(err);
@@ -53635,15 +53659,27 @@ class SocksClient extends events_1.EventEmitter {
      * @returns { Promise }
      */
     static createConnectionChain(options, callback) {
-        // Validate SocksClientChainOptions
-        helpers_1.validateSocksClientChainOptions(options);
-        // Shuffle proxies
-        if (options.randomizeChain) {
-            util_1.shuffleArray(options.proxies);
-        }
         return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
-            let sock;
+            // Validate SocksClientChainOptions
             try {
+                helpers_1.validateSocksClientChainOptions(options);
+            }
+            catch (err) {
+                if (typeof callback === 'function') {
+                    callback(err);
+                    return resolve(err); // Resolves pending promise (prevents memory leaks).
+                }
+                else {
+                    return reject(err);
+                }
+            }
+            let sock;
+            // Shuffle proxies
+            if (options.randomizeChain) {
+                util_1.shuffleArray(options.proxies);
+            }
+            try {
+                // tslint:disable-next-line:no-increment-decrement
                 for (let i = 0; i < options.proxies.length; i++) {
                     const nextProxy = options.proxies[i];
                     // If we've reached the last proxy in the chain, the destination is the actual destination, otherwise it's the next proxy.
@@ -53651,13 +53687,13 @@ class SocksClient extends events_1.EventEmitter {
                         ? options.destination
                         : {
                             host: options.proxies[i + 1].ipaddress,
-                            port: options.proxies[i + 1].port
+                            port: options.proxies[i + 1].port,
                         };
                     // Creates the next connection in the chain.
                     const result = yield SocksClient.createConnection({
                         command: 'connect',
                         proxy: nextProxy,
-                        destination: nextDestination
+                        destination: nextDestination,
                         // Initial connection ignores this as sock is undefined. Subsequent connections re-use the first proxy socket to form a chain.
                     });
                     // If sock is undefined, assign it here.
@@ -53667,7 +53703,7 @@ class SocksClient extends events_1.EventEmitter {
                 }
                 if (typeof callback === 'function') {
                     callback(null, { socket: sock });
-                    resolve(); // Resolves pending promise (prevents memory leaks).
+                    resolve({ socket: sock }); // Resolves pending promise (prevents memory leaks).
                 }
                 else {
                     resolve({ socket: sock });
@@ -53676,7 +53712,7 @@ class SocksClient extends events_1.EventEmitter {
             catch (err) {
                 if (typeof callback === 'function') {
                     callback(err);
-                    resolve(); // Resolves pending promise (prevents memory leaks).
+                    resolve(err); // Resolves pending promise (prevents memory leaks).
                 }
                 else {
                     reject(err);
@@ -53736,69 +53772,63 @@ class SocksClient extends events_1.EventEmitter {
             frameNumber,
             remoteHost: {
                 host: remoteHost,
-                port: remotePort
+                port: remotePort,
             },
-            data: buff.readBuffer()
+            data: buff.readBuffer(),
         };
-    }
-    /**
-     * Gets the SocksClient internal state.
-     */
-    get state() {
-        return this._state;
     }
     /**
      * Internal state setter. If the SocksClient is in an error state, it cannot be changed to a non error state.
      */
-    set state(newState) {
-        if (this._state !== constants_1.SocksClientState.Error) {
-            this._state = newState;
+    setState(newState) {
+        if (this.state !== constants_1.SocksClientState.Error) {
+            this.state = newState;
         }
     }
     /**
      * Starts the connection establishment to the proxy and destination.
-     * @param existing_socket Connected socket to use instead of creating a new one (internal use).
+     * @param existingSocket Connected socket to use instead of creating a new one (internal use).
      */
-    connect(existing_socket) {
-        this._onDataReceived = (data) => this.onDataReceived(data);
-        this._onClose = () => this.onClose();
-        this._onError = (err) => this.onError(err);
-        this._onConnect = () => this.onConnect();
+    connect(existingSocket) {
+        this.onDataReceived = (data) => this.onDataReceivedHandler(data);
+        this.onClose = () => this.onCloseHandler();
+        this.onError = (err) => this.onErrorHandler(err);
+        this.onConnect = () => this.onConnectHandler();
         // Start timeout timer (defaults to 30 seconds)
-        const timer = setTimeout(() => this.onEstablishedTimeout(), this._options.timeout || constants_1.DEFAULT_TIMEOUT);
+        const timer = setTimeout(() => this.onEstablishedTimeout(), this.options.timeout || constants_1.DEFAULT_TIMEOUT);
         // check whether unref is available as it differs from browser to NodeJS (#33)
         if (timer.unref && typeof timer.unref === 'function') {
             timer.unref();
         }
         // If an existing socket is provided, use it to negotiate SOCKS handshake. Otherwise create a new Socket.
-        if (existing_socket) {
-            this._socket = existing_socket;
+        if (existingSocket) {
+            this.socket = existingSocket;
         }
         else {
-            this._socket = new net.Socket();
+            this.socket = new net.Socket();
         }
         // Attach Socket error handlers.
-        this._socket.once('close', this._onClose);
-        this._socket.once('error', this._onError);
-        this._socket.once('connect', this._onConnect);
-        this._socket.on('data', this._onDataReceived);
-        this.state = constants_1.SocksClientState.Connecting;
-        this._receiveBuffer = new receivebuffer_1.ReceiveBuffer();
-        if (existing_socket) {
-            this._socket.emit('connect');
+        this.socket.once('close', this.onClose);
+        this.socket.once('error', this.onError);
+        this.socket.once('connect', this.onConnect);
+        this.socket.on('data', this.onDataReceived);
+        this.setState(constants_1.SocksClientState.Connecting);
+        this.receiveBuffer = new receivebuffer_1.ReceiveBuffer();
+        if (existingSocket) {
+            this.socket.emit('connect');
         }
         else {
-            this._socket.connect(this.getSocketOptions());
-            if (this._options.set_tcp_nodelay !== undefined &&
-                this._options.set_tcp_nodelay !== null) {
-                this._socket.setNoDelay(!!this._options.set_tcp_nodelay);
+            this.socket.connect(this.getSocketOptions());
+            if (this.options.set_tcp_nodelay !== undefined &&
+                this.options.set_tcp_nodelay !== null) {
+                this.socket.setNoDelay(!!this.options.set_tcp_nodelay);
             }
         }
         // Listen for established event so we can re-emit any excess data received during handshakes.
-        this.prependOnceListener('established', info => {
+        this.prependOnceListener('established', (info) => {
             setImmediate(() => {
-                if (this._receiveBuffer.length > 0) {
-                    const excessData = this._receiveBuffer.get(this._receiveBuffer.length);
+                if (this.receiveBuffer.length > 0) {
+                    const excessData = this.receiveBuffer.get(this.receiveBuffer.length);
                     info.socket.emit('data', excessData);
                 }
                 info.socket.resume();
@@ -53807,7 +53837,7 @@ class SocksClient extends events_1.EventEmitter {
     }
     // Socket options (defaults host/port to options.proxy.host/options.proxy.port)
     getSocketOptions() {
-        return Object.assign(Object.assign({}, this._options.socket_options), { host: this._options.proxy.host || this._options.proxy.ipaddress, port: this._options.proxy.port });
+        return Object.assign(Object.assign({}, this.options.socket_options), { host: this.options.proxy.host || this.options.proxy.ipaddress, port: this.options.proxy.port });
     }
     /**
      * Handles internal Socks timeout callback.
@@ -53816,33 +53846,33 @@ class SocksClient extends events_1.EventEmitter {
     onEstablishedTimeout() {
         if (this.state !== constants_1.SocksClientState.Established &&
             this.state !== constants_1.SocksClientState.BoundWaitingForConnection) {
-            this._closeSocket(constants_1.ERRORS.ProxyConnectionTimedOut);
+            this.closeSocket(constants_1.ERRORS.ProxyConnectionTimedOut);
         }
     }
     /**
      * Handles Socket connect event.
      */
-    onConnect() {
-        this.state = constants_1.SocksClientState.Connected;
+    onConnectHandler() {
+        this.setState(constants_1.SocksClientState.Connected);
         // Send initial handshake.
-        if (this._options.proxy.type === 4) {
+        if (this.options.proxy.type === 4) {
             this.sendSocks4InitialHandshake();
         }
         else {
             this.sendSocks5InitialHandshake();
         }
-        this.state = constants_1.SocksClientState.SentInitialHandshake;
+        this.setState(constants_1.SocksClientState.SentInitialHandshake);
     }
     /**
      * Handles Socket data event.
      * @param data
      */
-    onDataReceived(data) {
+    onDataReceivedHandler(data) {
         /*
           All received data is appended to a ReceiveBuffer.
           This makes sure that all the data we need is received before we attempt to process it.
         */
-        this._receiveBuffer.append(data);
+        this.receiveBuffer.append(data);
         // Process data that we have.
         this.processData();
     }
@@ -53851,10 +53881,12 @@ class SocksClient extends events_1.EventEmitter {
      */
     processData() {
         // If we have enough data to process the next step in the SOCKS handshake, proceed.
-        if (this._receiveBuffer.length >= this._nextRequiredPacketBufferSize) {
+        while (this.state !== constants_1.SocksClientState.Established &&
+            this.state !== constants_1.SocksClientState.Error &&
+            this.receiveBuffer.length >= this.nextRequiredPacketBufferSize) {
             // Sent initial handshake, waiting for response.
             if (this.state === constants_1.SocksClientState.SentInitialHandshake) {
-                if (this._options.proxy.type === 4) {
+                if (this.options.proxy.type === 4) {
                     // Socks v4 only has one handshake response.
                     this.handleSocks4FinalHandshakeResponse();
                 }
@@ -53873,18 +53905,16 @@ class SocksClient extends events_1.EventEmitter {
                 // Socks BIND established. Waiting for remote connection via proxy.
             }
             else if (this.state === constants_1.SocksClientState.BoundWaitingForConnection) {
-                if (this._options.proxy.type === 4) {
+                if (this.options.proxy.type === 4) {
                     this.handleSocks4IncomingConnectionResponse();
                 }
                 else {
                     this.handleSocks5IncomingConnectionResponse();
                 }
             }
-            else if (this.state === constants_1.SocksClientState.Established) {
-                // do nothing (prevents closing of the socket)
-            }
             else {
-                this._closeSocket(constants_1.ERRORS.InternalError);
+                this.closeSocket(constants_1.ERRORS.InternalError);
+                break;
             }
         }
     }
@@ -53892,56 +53922,56 @@ class SocksClient extends events_1.EventEmitter {
      * Handles Socket close event.
      * @param had_error
      */
-    onClose() {
-        this._closeSocket(constants_1.ERRORS.SocketClosed);
+    onCloseHandler() {
+        this.closeSocket(constants_1.ERRORS.SocketClosed);
     }
     /**
      * Handles Socket error event.
      * @param err
      */
-    onError(err) {
-        this._closeSocket(err.message);
+    onErrorHandler(err) {
+        this.closeSocket(err.message);
     }
     /**
      * Removes internal event listeners on the underlying Socket.
      */
     removeInternalSocketHandlers() {
         // Pauses data flow of the socket (this is internally resumed after 'established' is emitted)
-        this._socket.pause();
-        this._socket.removeListener('data', this._onDataReceived);
-        this._socket.removeListener('close', this._onClose);
-        this._socket.removeListener('error', this._onError);
-        this._socket.removeListener('connect', this.onConnect);
+        this.socket.pause();
+        this.socket.removeListener('data', this.onDataReceived);
+        this.socket.removeListener('close', this.onClose);
+        this.socket.removeListener('error', this.onError);
+        this.socket.removeListener('connect', this.onConnect);
     }
     /**
      * Closes and destroys the underlying Socket. Emits an error event.
      * @param err { String } An error string to include in error event.
      */
-    _closeSocket(err) {
+    closeSocket(err) {
         // Make sure only one 'error' event is fired for the lifetime of this SocksClient instance.
         if (this.state !== constants_1.SocksClientState.Error) {
             // Set internal state to Error.
-            this.state = constants_1.SocksClientState.Error;
+            this.setState(constants_1.SocksClientState.Error);
             // Destroy Socket
-            this._socket.destroy();
+            this.socket.destroy();
             // Remove internal listeners
             this.removeInternalSocketHandlers();
             // Fire 'error' event.
-            this.emit('error', new util_1.SocksClientError(err, this._options));
+            this.emit('error', new util_1.SocksClientError(err, this.options));
         }
     }
     /**
      * Sends initial Socks v4 handshake request.
      */
     sendSocks4InitialHandshake() {
-        const userId = this._options.proxy.userId || '';
+        const userId = this.options.proxy.userId || '';
         const buff = new smart_buffer_1.SmartBuffer();
         buff.writeUInt8(0x04);
-        buff.writeUInt8(constants_1.SocksCommand[this._options.command]);
-        buff.writeUInt16BE(this._options.destination.port);
+        buff.writeUInt8(constants_1.SocksCommand[this.options.command]);
+        buff.writeUInt16BE(this.options.destination.port);
         // Socks 4 (IPv4)
-        if (net.isIPv4(this._options.destination.host)) {
-            buff.writeBuffer(ip.toBuffer(this._options.destination.host));
+        if (net.isIPv4(this.options.destination.host)) {
+            buff.writeBuffer(ip.toBuffer(this.options.destination.host));
             buff.writeStringNT(userId);
             // Socks 4a (hostname)
         }
@@ -53951,42 +53981,42 @@ class SocksClient extends events_1.EventEmitter {
             buff.writeUInt8(0x00);
             buff.writeUInt8(0x01);
             buff.writeStringNT(userId);
-            buff.writeStringNT(this._options.destination.host);
+            buff.writeStringNT(this.options.destination.host);
         }
-        this._nextRequiredPacketBufferSize =
+        this.nextRequiredPacketBufferSize =
             constants_1.SOCKS_INCOMING_PACKET_SIZES.Socks4Response;
-        this._socket.write(buff.toBuffer());
+        this.socket.write(buff.toBuffer());
     }
     /**
      * Handles Socks v4 handshake response.
      * @param data
      */
     handleSocks4FinalHandshakeResponse() {
-        const data = this._receiveBuffer.get(8);
+        const data = this.receiveBuffer.get(8);
         if (data[1] !== constants_1.Socks4Response.Granted) {
-            this._closeSocket(`${constants_1.ERRORS.Socks4ProxyRejectedConnection} - (${constants_1.Socks4Response[data[1]]})`);
+            this.closeSocket(`${constants_1.ERRORS.Socks4ProxyRejectedConnection} - (${constants_1.Socks4Response[data[1]]})`);
         }
         else {
             // Bind response
-            if (constants_1.SocksCommand[this._options.command] === constants_1.SocksCommand.bind) {
+            if (constants_1.SocksCommand[this.options.command] === constants_1.SocksCommand.bind) {
                 const buff = smart_buffer_1.SmartBuffer.fromBuffer(data);
                 buff.readOffset = 2;
                 const remoteHost = {
                     port: buff.readUInt16BE(),
-                    host: ip.fromLong(buff.readUInt32BE())
+                    host: ip.fromLong(buff.readUInt32BE()),
                 };
                 // If host is 0.0.0.0, set to proxy host.
                 if (remoteHost.host === '0.0.0.0') {
-                    remoteHost.host = this._options.proxy.ipaddress;
+                    remoteHost.host = this.options.proxy.ipaddress;
                 }
-                this.state = constants_1.SocksClientState.BoundWaitingForConnection;
-                this.emit('bound', { socket: this._socket, remoteHost });
+                this.setState(constants_1.SocksClientState.BoundWaitingForConnection);
+                this.emit('bound', { remoteHost, socket: this.socket });
                 // Connect response
             }
             else {
-                this.state = constants_1.SocksClientState.Established;
+                this.setState(constants_1.SocksClientState.Established);
                 this.removeInternalSocketHandlers();
-                this.emit('established', { socket: this._socket });
+                this.emit('established', { socket: this.socket });
             }
         }
     }
@@ -53995,20 +54025,20 @@ class SocksClient extends events_1.EventEmitter {
      * @param data
      */
     handleSocks4IncomingConnectionResponse() {
-        const data = this._receiveBuffer.get(8);
+        const data = this.receiveBuffer.get(8);
         if (data[1] !== constants_1.Socks4Response.Granted) {
-            this._closeSocket(`${constants_1.ERRORS.Socks4ProxyRejectedIncomingBoundConnection} - (${constants_1.Socks4Response[data[1]]})`);
+            this.closeSocket(`${constants_1.ERRORS.Socks4ProxyRejectedIncomingBoundConnection} - (${constants_1.Socks4Response[data[1]]})`);
         }
         else {
             const buff = smart_buffer_1.SmartBuffer.fromBuffer(data);
             buff.readOffset = 2;
             const remoteHost = {
                 port: buff.readUInt16BE(),
-                host: ip.fromLong(buff.readUInt32BE())
+                host: ip.fromLong(buff.readUInt32BE()),
             };
-            this.state = constants_1.SocksClientState.Established;
+            this.setState(constants_1.SocksClientState.Established);
             this.removeInternalSocketHandlers();
-            this.emit('established', { socket: this._socket, remoteHost });
+            this.emit('established', { remoteHost, socket: this.socket });
         }
     }
     /**
@@ -54016,46 +54046,58 @@ class SocksClient extends events_1.EventEmitter {
      */
     sendSocks5InitialHandshake() {
         const buff = new smart_buffer_1.SmartBuffer();
-        buff.writeUInt8(0x05);
+        // By default we always support no auth.
+        const supportedAuthMethods = [constants_1.Socks5Auth.NoAuth];
         // We should only tell the proxy we support user/pass auth if auth info is actually provided.
         // Note: As of Tor v0.3.5.7+, if user/pass auth is an option from the client, by default it will always take priority.
-        if (this._options.proxy.userId || this._options.proxy.password) {
-            buff.writeUInt8(2);
-            buff.writeUInt8(constants_1.Socks5Auth.NoAuth);
-            buff.writeUInt8(constants_1.Socks5Auth.UserPass);
+        if (this.options.proxy.userId || this.options.proxy.password) {
+            supportedAuthMethods.push(constants_1.Socks5Auth.UserPass);
         }
-        else {
-            buff.writeUInt8(1);
-            buff.writeUInt8(constants_1.Socks5Auth.NoAuth);
+        // Custom auth method?
+        if (this.options.proxy.custom_auth_method !== undefined) {
+            supportedAuthMethods.push(this.options.proxy.custom_auth_method);
         }
-        this._nextRequiredPacketBufferSize =
+        // Build handshake packet
+        buff.writeUInt8(0x05);
+        buff.writeUInt8(supportedAuthMethods.length);
+        for (const authMethod of supportedAuthMethods) {
+            buff.writeUInt8(authMethod);
+        }
+        this.nextRequiredPacketBufferSize =
             constants_1.SOCKS_INCOMING_PACKET_SIZES.Socks5InitialHandshakeResponse;
-        this._socket.write(buff.toBuffer());
-        this.state = constants_1.SocksClientState.SentInitialHandshake;
+        this.socket.write(buff.toBuffer());
+        this.setState(constants_1.SocksClientState.SentInitialHandshake);
     }
     /**
      * Handles initial Socks v5 handshake response.
      * @param data
      */
     handleInitialSocks5HandshakeResponse() {
-        const data = this._receiveBuffer.get(2);
+        const data = this.receiveBuffer.get(2);
         if (data[0] !== 0x05) {
-            this._closeSocket(constants_1.ERRORS.InvalidSocks5IntiailHandshakeSocksVersion);
+            this.closeSocket(constants_1.ERRORS.InvalidSocks5IntiailHandshakeSocksVersion);
         }
-        else if (data[1] === 0xff) {
-            this._closeSocket(constants_1.ERRORS.InvalidSocks5InitialHandshakeNoAcceptedAuthType);
+        else if (data[1] === constants_1.SOCKS5_NO_ACCEPTABLE_AUTH) {
+            this.closeSocket(constants_1.ERRORS.InvalidSocks5InitialHandshakeNoAcceptedAuthType);
         }
         else {
             // If selected Socks v5 auth method is no auth, send final handshake request.
             if (data[1] === constants_1.Socks5Auth.NoAuth) {
+                this.socks5ChosenAuthType = constants_1.Socks5Auth.NoAuth;
                 this.sendSocks5CommandRequest();
                 // If selected Socks v5 auth method is user/password, send auth handshake.
             }
             else if (data[1] === constants_1.Socks5Auth.UserPass) {
+                this.socks5ChosenAuthType = constants_1.Socks5Auth.UserPass;
                 this.sendSocks5UserPassAuthentication();
+                // If selected Socks v5 auth method is the custom_auth_method, send custom handshake.
+            }
+            else if (data[1] === this.options.proxy.custom_auth_method) {
+                this.socks5ChosenAuthType = this.options.proxy.custom_auth_method;
+                this.sendSocks5CustomAuthentication();
             }
             else {
-                this._closeSocket(constants_1.ERRORS.InvalidSocks5InitialHandshakeUnknownAuthType);
+                this.closeSocket(constants_1.ERRORS.InvalidSocks5InitialHandshakeUnknownAuthType);
             }
         }
     }
@@ -54065,32 +54107,65 @@ class SocksClient extends events_1.EventEmitter {
      * Note: No auth and user/pass are currently supported.
      */
     sendSocks5UserPassAuthentication() {
-        const userId = this._options.proxy.userId || '';
-        const password = this._options.proxy.password || '';
+        const userId = this.options.proxy.userId || '';
+        const password = this.options.proxy.password || '';
         const buff = new smart_buffer_1.SmartBuffer();
         buff.writeUInt8(0x01);
         buff.writeUInt8(Buffer.byteLength(userId));
         buff.writeString(userId);
         buff.writeUInt8(Buffer.byteLength(password));
         buff.writeString(password);
-        this._nextRequiredPacketBufferSize =
+        this.nextRequiredPacketBufferSize =
             constants_1.SOCKS_INCOMING_PACKET_SIZES.Socks5UserPassAuthenticationResponse;
-        this._socket.write(buff.toBuffer());
-        this.state = constants_1.SocksClientState.SentAuthentication;
+        this.socket.write(buff.toBuffer());
+        this.setState(constants_1.SocksClientState.SentAuthentication);
+    }
+    sendSocks5CustomAuthentication() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.nextRequiredPacketBufferSize = this.options.proxy.custom_auth_response_size;
+            this.socket.write(yield this.options.proxy.custom_auth_request_handler());
+            this.setState(constants_1.SocksClientState.SentAuthentication);
+        });
+    }
+    handleSocks5CustomAuthHandshakeResponse(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.options.proxy.custom_auth_response_handler(data);
+        });
+    }
+    handleSocks5AuthenticationNoAuthHandshakeResponse(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return data[1] === 0x00;
+        });
+    }
+    handleSocks5AuthenticationUserPassHandshakeResponse(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return data[1] === 0x00;
+        });
     }
     /**
      * Handles Socks v5 auth handshake response.
      * @param data
      */
     handleInitialSocks5AuthenticationHandshakeResponse() {
-        this.state = constants_1.SocksClientState.ReceivedAuthenticationResponse;
-        const data = this._receiveBuffer.get(2);
-        if (data[1] !== 0x00) {
-            this._closeSocket(constants_1.ERRORS.Socks5AuthenticationFailed);
-        }
-        else {
-            this.sendSocks5CommandRequest();
-        }
+        return __awaiter(this, void 0, void 0, function* () {
+            this.setState(constants_1.SocksClientState.ReceivedAuthenticationResponse);
+            let authResult = false;
+            if (this.socks5ChosenAuthType === constants_1.Socks5Auth.NoAuth) {
+                authResult = yield this.handleSocks5AuthenticationNoAuthHandshakeResponse(this.receiveBuffer.get(2));
+            }
+            else if (this.socks5ChosenAuthType === constants_1.Socks5Auth.UserPass) {
+                authResult = yield this.handleSocks5AuthenticationUserPassHandshakeResponse(this.receiveBuffer.get(2));
+            }
+            else if (this.socks5ChosenAuthType === this.options.proxy.custom_auth_method) {
+                authResult = yield this.handleSocks5CustomAuthHandshakeResponse(this.receiveBuffer.get(this.options.proxy.custom_auth_response_size));
+            }
+            if (!authResult) {
+                this.closeSocket(constants_1.ERRORS.Socks5AuthenticationFailed);
+            }
+            else {
+                this.sendSocks5CommandRequest();
+            }
+        });
     }
     /**
      * Sends Socks v5 final handshake request.
@@ -54098,27 +54173,27 @@ class SocksClient extends events_1.EventEmitter {
     sendSocks5CommandRequest() {
         const buff = new smart_buffer_1.SmartBuffer();
         buff.writeUInt8(0x05);
-        buff.writeUInt8(constants_1.SocksCommand[this._options.command]);
+        buff.writeUInt8(constants_1.SocksCommand[this.options.command]);
         buff.writeUInt8(0x00);
         // ipv4, ipv6, domain?
-        if (net.isIPv4(this._options.destination.host)) {
+        if (net.isIPv4(this.options.destination.host)) {
             buff.writeUInt8(constants_1.Socks5HostType.IPv4);
-            buff.writeBuffer(ip.toBuffer(this._options.destination.host));
+            buff.writeBuffer(ip.toBuffer(this.options.destination.host));
         }
-        else if (net.isIPv6(this._options.destination.host)) {
+        else if (net.isIPv6(this.options.destination.host)) {
             buff.writeUInt8(constants_1.Socks5HostType.IPv6);
-            buff.writeBuffer(ip.toBuffer(this._options.destination.host));
+            buff.writeBuffer(ip.toBuffer(this.options.destination.host));
         }
         else {
             buff.writeUInt8(constants_1.Socks5HostType.Hostname);
-            buff.writeUInt8(this._options.destination.host.length);
-            buff.writeString(this._options.destination.host);
+            buff.writeUInt8(this.options.destination.host.length);
+            buff.writeString(this.options.destination.host);
         }
-        buff.writeUInt16BE(this._options.destination.port);
-        this._nextRequiredPacketBufferSize =
+        buff.writeUInt16BE(this.options.destination.port);
+        this.nextRequiredPacketBufferSize =
             constants_1.SOCKS_INCOMING_PACKET_SIZES.Socks5ResponseHeader;
-        this._socket.write(buff.toBuffer());
-        this.state = constants_1.SocksClientState.SentFinalHandshake;
+        this.socket.write(buff.toBuffer());
+        this.setState(constants_1.SocksClientState.SentFinalHandshake);
     }
     /**
      * Handles Socks v5 final handshake response.
@@ -54126,9 +54201,9 @@ class SocksClient extends events_1.EventEmitter {
      */
     handleSocks5FinalHandshakeResponse() {
         // Peek at available data (we need at least 5 bytes to get the hostname length)
-        const header = this._receiveBuffer.peek(5);
+        const header = this.receiveBuffer.peek(5);
         if (header[0] !== 0x05 || header[1] !== constants_1.Socks5Response.Granted) {
-            this._closeSocket(`${constants_1.ERRORS.InvalidSocks5FinalHandshakeRejected} - ${constants_1.Socks5Response[header[1]]}`);
+            this.closeSocket(`${constants_1.ERRORS.InvalidSocks5FinalHandshakeRejected} - ${constants_1.Socks5Response[header[1]]}`);
         }
         else {
             // Read address type
@@ -54139,18 +54214,18 @@ class SocksClient extends events_1.EventEmitter {
             if (addressType === constants_1.Socks5HostType.IPv4) {
                 // Check if data is available.
                 const dataNeeded = constants_1.SOCKS_INCOMING_PACKET_SIZES.Socks5ResponseIPv4;
-                if (this._receiveBuffer.length < dataNeeded) {
-                    this._nextRequiredPacketBufferSize = dataNeeded;
+                if (this.receiveBuffer.length < dataNeeded) {
+                    this.nextRequiredPacketBufferSize = dataNeeded;
                     return;
                 }
-                buff = smart_buffer_1.SmartBuffer.fromBuffer(this._receiveBuffer.get(dataNeeded).slice(4));
+                buff = smart_buffer_1.SmartBuffer.fromBuffer(this.receiveBuffer.get(dataNeeded).slice(4));
                 remoteHost = {
                     host: ip.fromLong(buff.readUInt32BE()),
-                    port: buff.readUInt16BE()
+                    port: buff.readUInt16BE(),
                 };
                 // If given host is 0.0.0.0, assume remote proxy ip instead.
                 if (remoteHost.host === '0.0.0.0') {
-                    remoteHost.host = this._options.proxy.ipaddress;
+                    remoteHost.host = this.options.proxy.ipaddress;
                 }
                 // Hostname
             }
@@ -54158,55 +54233,57 @@ class SocksClient extends events_1.EventEmitter {
                 const hostLength = header[4];
                 const dataNeeded = constants_1.SOCKS_INCOMING_PACKET_SIZES.Socks5ResponseHostname(hostLength); // header + host length + host + port
                 // Check if data is available.
-                if (this._receiveBuffer.length < dataNeeded) {
-                    this._nextRequiredPacketBufferSize = dataNeeded;
+                if (this.receiveBuffer.length < dataNeeded) {
+                    this.nextRequiredPacketBufferSize = dataNeeded;
                     return;
                 }
-                buff = smart_buffer_1.SmartBuffer.fromBuffer(this._receiveBuffer.get(dataNeeded).slice(5) // Slice at 5 to skip host length
-                );
+                buff = smart_buffer_1.SmartBuffer.fromBuffer(this.receiveBuffer.get(dataNeeded).slice(5));
                 remoteHost = {
                     host: buff.readString(hostLength),
-                    port: buff.readUInt16BE()
+                    port: buff.readUInt16BE(),
                 };
                 // IPv6
             }
             else if (addressType === constants_1.Socks5HostType.IPv6) {
                 // Check if data is available.
                 const dataNeeded = constants_1.SOCKS_INCOMING_PACKET_SIZES.Socks5ResponseIPv6;
-                if (this._receiveBuffer.length < dataNeeded) {
-                    this._nextRequiredPacketBufferSize = dataNeeded;
+                if (this.receiveBuffer.length < dataNeeded) {
+                    this.nextRequiredPacketBufferSize = dataNeeded;
                     return;
                 }
-                buff = smart_buffer_1.SmartBuffer.fromBuffer(this._receiveBuffer.get(dataNeeded).slice(4));
+                buff = smart_buffer_1.SmartBuffer.fromBuffer(this.receiveBuffer.get(dataNeeded).slice(4));
                 remoteHost = {
                     host: ip.toString(buff.readBuffer(16)),
-                    port: buff.readUInt16BE()
+                    port: buff.readUInt16BE(),
                 };
             }
             // We have everything we need
-            this.state = constants_1.SocksClientState.ReceivedFinalResponse;
+            this.setState(constants_1.SocksClientState.ReceivedFinalResponse);
             // If using CONNECT, the client is now in the established state.
-            if (constants_1.SocksCommand[this._options.command] === constants_1.SocksCommand.connect) {
-                this.state = constants_1.SocksClientState.Established;
+            if (constants_1.SocksCommand[this.options.command] === constants_1.SocksCommand.connect) {
+                this.setState(constants_1.SocksClientState.Established);
                 this.removeInternalSocketHandlers();
-                this.emit('established', { socket: this._socket });
+                this.emit('established', { socket: this.socket });
             }
-            else if (constants_1.SocksCommand[this._options.command] === constants_1.SocksCommand.bind) {
+            else if (constants_1.SocksCommand[this.options.command] === constants_1.SocksCommand.bind) {
                 /* If using BIND, the Socks client is now in BoundWaitingForConnection state.
                    This means that the remote proxy server is waiting for a remote connection to the bound port. */
-                this.state = constants_1.SocksClientState.BoundWaitingForConnection;
-                this._nextRequiredPacketBufferSize =
+                this.setState(constants_1.SocksClientState.BoundWaitingForConnection);
+                this.nextRequiredPacketBufferSize =
                     constants_1.SOCKS_INCOMING_PACKET_SIZES.Socks5ResponseHeader;
-                this.emit('bound', { socket: this._socket, remoteHost });
+                this.emit('bound', { remoteHost, socket: this.socket });
                 /*
                   If using Associate, the Socks client is now Established. And the proxy server is now accepting UDP packets at the
                   given bound port. This initial Socks TCP connection must remain open for the UDP relay to continue to work.
                 */
             }
-            else if (constants_1.SocksCommand[this._options.command] === constants_1.SocksCommand.associate) {
-                this.state = constants_1.SocksClientState.Established;
+            else if (constants_1.SocksCommand[this.options.command] === constants_1.SocksCommand.associate) {
+                this.setState(constants_1.SocksClientState.Established);
                 this.removeInternalSocketHandlers();
-                this.emit('established', { socket: this._socket, remoteHost });
+                this.emit('established', {
+                    remoteHost,
+                    socket: this.socket,
+                });
             }
         }
     }
@@ -54215,9 +54292,9 @@ class SocksClient extends events_1.EventEmitter {
      */
     handleSocks5IncomingConnectionResponse() {
         // Peek at available data (we need at least 5 bytes to get the hostname length)
-        const header = this._receiveBuffer.peek(5);
+        const header = this.receiveBuffer.peek(5);
         if (header[0] !== 0x05 || header[1] !== constants_1.Socks5Response.Granted) {
-            this._closeSocket(`${constants_1.ERRORS.Socks5ProxyRejectedIncomingBoundConnection} - ${constants_1.Socks5Response[header[1]]}`);
+            this.closeSocket(`${constants_1.ERRORS.Socks5ProxyRejectedIncomingBoundConnection} - ${constants_1.Socks5Response[header[1]]}`);
         }
         else {
             // Read address type
@@ -54228,18 +54305,18 @@ class SocksClient extends events_1.EventEmitter {
             if (addressType === constants_1.Socks5HostType.IPv4) {
                 // Check if data is available.
                 const dataNeeded = constants_1.SOCKS_INCOMING_PACKET_SIZES.Socks5ResponseIPv4;
-                if (this._receiveBuffer.length < dataNeeded) {
-                    this._nextRequiredPacketBufferSize = dataNeeded;
+                if (this.receiveBuffer.length < dataNeeded) {
+                    this.nextRequiredPacketBufferSize = dataNeeded;
                     return;
                 }
-                buff = smart_buffer_1.SmartBuffer.fromBuffer(this._receiveBuffer.get(dataNeeded).slice(4));
+                buff = smart_buffer_1.SmartBuffer.fromBuffer(this.receiveBuffer.get(dataNeeded).slice(4));
                 remoteHost = {
                     host: ip.fromLong(buff.readUInt32BE()),
-                    port: buff.readUInt16BE()
+                    port: buff.readUInt16BE(),
                 };
                 // If given host is 0.0.0.0, assume remote proxy ip instead.
                 if (remoteHost.host === '0.0.0.0') {
-                    remoteHost.host = this._options.proxy.ipaddress;
+                    remoteHost.host = this.options.proxy.ipaddress;
                 }
                 // Hostname
             }
@@ -54247,38 +54324,37 @@ class SocksClient extends events_1.EventEmitter {
                 const hostLength = header[4];
                 const dataNeeded = constants_1.SOCKS_INCOMING_PACKET_SIZES.Socks5ResponseHostname(hostLength); // header + host length + port
                 // Check if data is available.
-                if (this._receiveBuffer.length < dataNeeded) {
-                    this._nextRequiredPacketBufferSize = dataNeeded;
+                if (this.receiveBuffer.length < dataNeeded) {
+                    this.nextRequiredPacketBufferSize = dataNeeded;
                     return;
                 }
-                buff = smart_buffer_1.SmartBuffer.fromBuffer(this._receiveBuffer.get(dataNeeded).slice(5) // Slice at 5 to skip host length
-                );
+                buff = smart_buffer_1.SmartBuffer.fromBuffer(this.receiveBuffer.get(dataNeeded).slice(5));
                 remoteHost = {
                     host: buff.readString(hostLength),
-                    port: buff.readUInt16BE()
+                    port: buff.readUInt16BE(),
                 };
                 // IPv6
             }
             else if (addressType === constants_1.Socks5HostType.IPv6) {
                 // Check if data is available.
                 const dataNeeded = constants_1.SOCKS_INCOMING_PACKET_SIZES.Socks5ResponseIPv6;
-                if (this._receiveBuffer.length < dataNeeded) {
-                    this._nextRequiredPacketBufferSize = dataNeeded;
+                if (this.receiveBuffer.length < dataNeeded) {
+                    this.nextRequiredPacketBufferSize = dataNeeded;
                     return;
                 }
-                buff = smart_buffer_1.SmartBuffer.fromBuffer(this._receiveBuffer.get(dataNeeded).slice(4));
+                buff = smart_buffer_1.SmartBuffer.fromBuffer(this.receiveBuffer.get(dataNeeded).slice(4));
                 remoteHost = {
                     host: ip.toString(buff.readBuffer(16)),
-                    port: buff.readUInt16BE()
+                    port: buff.readUInt16BE(),
                 };
             }
-            this.state = constants_1.SocksClientState.Established;
+            this.setState(constants_1.SocksClientState.Established);
             this.removeInternalSocketHandlers();
-            this.emit('established', { socket: this._socket, remoteHost });
+            this.emit('established', { remoteHost, socket: this.socket });
         }
     }
     get socksClientOptions() {
-        return Object.assign({}, this._options);
+        return Object.assign({}, this.options);
     }
 }
 exports.SocksClient = SocksClient;
@@ -54292,6 +54368,7 @@ exports.SocksClient = SocksClient;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SOCKS5_NO_ACCEPTABLE_AUTH = exports.SOCKS5_CUSTOM_AUTH_END = exports.SOCKS5_CUSTOM_AUTH_START = exports.SOCKS_INCOMING_PACKET_SIZES = exports.SocksClientState = exports.Socks5Response = exports.Socks5HostType = exports.Socks5Auth = exports.Socks4Response = exports.SocksCommand = exports.ERRORS = exports.DEFAULT_TIMEOUT = void 0;
 const DEFAULT_TIMEOUT = 30000;
 exports.DEFAULT_TIMEOUT = DEFAULT_TIMEOUT;
 // prettier-ignore
@@ -54304,6 +54381,8 @@ const ERRORS = {
     InvalidSocksClientOptionsProxy: 'Invalid SOCKS proxy details were provided.',
     InvalidSocksClientOptionsTimeout: 'An invalid timeout value was provided. Please enter a value above 0 (in ms).',
     InvalidSocksClientOptionsProxiesLength: 'At least two socks proxies must be provided for chaining.',
+    InvalidSocksClientOptionsCustomAuthRange: 'Custom auth must be a value between 0x80 and 0xFE.',
+    InvalidSocksClientOptionsCustomAuthOptions: 'When a custom_auth_method is provided, custom_auth_request_handler, custom_auth_response_size, and custom_auth_response_handler must also be provided and valid.',
     NegotiationError: 'Negotiation error',
     SocketClosed: 'Socket closed',
     ProxyConnectionTimedOut: 'Proxy connection timed out',
@@ -54332,7 +54411,7 @@ const SOCKS_INCOMING_PACKET_SIZES = {
     Socks5ResponseIPv6: 22,
     Socks5ResponseHostname: (hostNameLength) => hostNameLength + 7,
     // Command response + incoming connection (bind)
-    Socks4Response: 8 // 2 header + 2 port + 4 ip
+    Socks4Response: 8, // 2 header + 2 port + 4 ip
 };
 exports.SOCKS_INCOMING_PACKET_SIZES = SOCKS_INCOMING_PACKET_SIZES;
 var SocksCommand;
@@ -54357,6 +54436,12 @@ var Socks5Auth;
     Socks5Auth[Socks5Auth["UserPass"] = 2] = "UserPass";
 })(Socks5Auth || (Socks5Auth = {}));
 exports.Socks5Auth = Socks5Auth;
+const SOCKS5_CUSTOM_AUTH_START = 0x80;
+exports.SOCKS5_CUSTOM_AUTH_START = SOCKS5_CUSTOM_AUTH_START;
+const SOCKS5_CUSTOM_AUTH_END = 0xfe;
+exports.SOCKS5_CUSTOM_AUTH_END = SOCKS5_CUSTOM_AUTH_END;
+const SOCKS5_NO_ACCEPTABLE_AUTH = 0xff;
+exports.SOCKS5_NO_ACCEPTABLE_AUTH = SOCKS5_NO_ACCEPTABLE_AUTH;
 var Socks5Response;
 (function (Socks5Response) {
     Socks5Response[Socks5Response["Granted"] = 0] = "Granted";
@@ -54404,6 +54489,7 @@ exports.SocksClientState = SocksClientState;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.validateSocksClientChainOptions = exports.validateSocksClientOptions = void 0;
 const util_1 = __nccwpck_require__(5523);
 const constants_1 = __nccwpck_require__(9647);
 const stream = __nccwpck_require__(2413);
@@ -54429,6 +54515,8 @@ function validateSocksClientOptions(options, acceptedCommands = ['connect', 'bin
     if (!isValidSocksProxy(options.proxy)) {
         throw new util_1.SocksClientError(constants_1.ERRORS.InvalidSocksClientOptionsProxy, options);
     }
+    // Validate custom auth (if set)
+    validateCustomProxyAuth(options.proxy, options);
     // Check timeout
     if (options.timeout && !isValidTimeoutValue(options.timeout)) {
         throw new util_1.SocksClientError(constants_1.ERRORS.InvalidSocksClientOptionsTimeout, options);
@@ -54464,6 +54552,8 @@ function validateSocksClientChainOptions(options) {
         if (!isValidSocksProxy(proxy)) {
             throw new util_1.SocksClientError(constants_1.ERRORS.InvalidSocksClientOptionsProxy, options);
         }
+        // Validate custom auth (if set)
+        validateCustomProxyAuth(proxy, options);
     });
     // Check timeout
     if (options.timeout && !isValidTimeoutValue(options.timeout)) {
@@ -54471,6 +54561,29 @@ function validateSocksClientChainOptions(options) {
     }
 }
 exports.validateSocksClientChainOptions = validateSocksClientChainOptions;
+function validateCustomProxyAuth(proxy, options) {
+    if (proxy.custom_auth_method !== undefined) {
+        // Invalid auth method range
+        if (proxy.custom_auth_method < constants_1.SOCKS5_CUSTOM_AUTH_START ||
+            proxy.custom_auth_method > constants_1.SOCKS5_CUSTOM_AUTH_END) {
+            throw new util_1.SocksClientError(constants_1.ERRORS.InvalidSocksClientOptionsCustomAuthRange, options);
+        }
+        // Missing custom_auth_request_handler
+        if (proxy.custom_auth_request_handler === undefined ||
+            typeof proxy.custom_auth_request_handler !== 'function') {
+            throw new util_1.SocksClientError(constants_1.ERRORS.InvalidSocksClientOptionsCustomAuthOptions, options);
+        }
+        // Missing custom_auth_response_size
+        if (proxy.custom_auth_response_size === undefined) {
+            throw new util_1.SocksClientError(constants_1.ERRORS.InvalidSocksClientOptionsCustomAuthOptions, options);
+        }
+        // Missing/invalid custom_auth_response_handler
+        if (proxy.custom_auth_response_handler === undefined ||
+            typeof proxy.custom_auth_response_handler !== 'function') {
+            throw new util_1.SocksClientError(constants_1.ERRORS.InvalidSocksClientOptionsCustomAuthOptions, options);
+        }
+    }
+}
 /**
  * Validates a SocksRemoteHost
  * @param remoteHost { SocksRemoteHost }
@@ -54511,41 +54624,42 @@ function isValidTimeoutValue(value) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ReceiveBuffer = void 0;
 class ReceiveBuffer {
     constructor(size = 4096) {
-        this._buffer = Buffer.allocUnsafe(size);
-        this._offset = 0;
-        this._originalSize = size;
+        this.buffer = Buffer.allocUnsafe(size);
+        this.offset = 0;
+        this.originalSize = size;
     }
     get length() {
-        return this._offset;
+        return this.offset;
     }
     append(data) {
         if (!Buffer.isBuffer(data)) {
             throw new Error('Attempted to append a non-buffer instance to ReceiveBuffer.');
         }
-        if (this._offset + data.length >= this._buffer.length) {
-            const tmp = this._buffer;
-            this._buffer = Buffer.allocUnsafe(Math.max(this._buffer.length + this._originalSize, this._buffer.length + data.length));
-            tmp.copy(this._buffer);
+        if (this.offset + data.length >= this.buffer.length) {
+            const tmp = this.buffer;
+            this.buffer = Buffer.allocUnsafe(Math.max(this.buffer.length + this.originalSize, this.buffer.length + data.length));
+            tmp.copy(this.buffer);
         }
-        data.copy(this._buffer, this._offset);
-        return (this._offset += data.length);
+        data.copy(this.buffer, this.offset);
+        return (this.offset += data.length);
     }
     peek(length) {
-        if (length > this._offset) {
+        if (length > this.offset) {
             throw new Error('Attempted to read beyond the bounds of the managed internal data.');
         }
-        return this._buffer.slice(0, length);
+        return this.buffer.slice(0, length);
     }
     get(length) {
-        if (length > this._offset) {
+        if (length > this.offset) {
             throw new Error('Attempted to read beyond the bounds of the managed internal data.');
         }
         const value = Buffer.allocUnsafe(length);
-        this._buffer.slice(0, length).copy(value);
-        this._buffer.copyWithin(0, length, length + this._offset - length);
-        this._offset -= length;
+        this.buffer.slice(0, length).copy(value);
+        this.buffer.copyWithin(0, length, length + this.offset - length);
+        this.offset -= length;
         return value;
     }
 }
@@ -54560,6 +54674,7 @@ exports.ReceiveBuffer = ReceiveBuffer;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.shuffleArray = exports.SocksClientError = void 0;
 /**
  * Error wrapper for SocksClient
  */
@@ -54575,8 +54690,9 @@ exports.SocksClientError = SocksClientError;
  * @param array The array to shuffle.
  */
 function shuffleArray(array) {
+    // tslint:disable-next-line:no-increment-decrement
     for (let i = array.length - 1; i > 0; i--) {
-        let j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
     }
 }
@@ -54586,15 +54702,22 @@ exports.shuffleArray = shuffleArray;
 /***/ }),
 
 /***/ 4754:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
-function __export(m) {
-    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
-}
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-__export(__nccwpck_require__(6127));
+__exportStar(__nccwpck_require__(6127), exports);
 //# sourceMappingURL=index.js.map
 
 /***/ }),
@@ -57974,26 +58097,30 @@ const hasFlag = __nccwpck_require__(1621);
 
 const {env} = process;
 
-let forceColor;
+let flagForceColor;
 if (hasFlag('no-color') ||
 	hasFlag('no-colors') ||
 	hasFlag('color=false') ||
 	hasFlag('color=never')) {
-	forceColor = 0;
+	flagForceColor = 0;
 } else if (hasFlag('color') ||
 	hasFlag('colors') ||
 	hasFlag('color=true') ||
 	hasFlag('color=always')) {
-	forceColor = 1;
+	flagForceColor = 1;
 }
 
-if ('FORCE_COLOR' in env) {
-	if (env.FORCE_COLOR === 'true') {
-		forceColor = 1;
-	} else if (env.FORCE_COLOR === 'false') {
-		forceColor = 0;
-	} else {
-		forceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
+function envForceColor() {
+	if ('FORCE_COLOR' in env) {
+		if (env.FORCE_COLOR === 'true') {
+			return 1;
+		}
+
+		if (env.FORCE_COLOR === 'false') {
+			return 0;
+		}
+
+		return env.FORCE_COLOR.length === 0 ? 1 : Math.min(Number.parseInt(env.FORCE_COLOR, 10), 3);
 	}
 }
 
@@ -58010,19 +58137,28 @@ function translateLevel(level) {
 	};
 }
 
-function supportsColor(haveStream, streamIsTTY) {
+function supportsColor(haveStream, {streamIsTTY, sniffFlags = true} = {}) {
+	const noFlagForceColor = envForceColor();
+	if (noFlagForceColor !== undefined) {
+		flagForceColor = noFlagForceColor;
+	}
+
+	const forceColor = sniffFlags ? flagForceColor : noFlagForceColor;
+
 	if (forceColor === 0) {
 		return 0;
 	}
 
-	if (hasFlag('color=16m') ||
-		hasFlag('color=full') ||
-		hasFlag('color=truecolor')) {
-		return 3;
-	}
+	if (sniffFlags) {
+		if (hasFlag('color=16m') ||
+			hasFlag('color=full') ||
+			hasFlag('color=truecolor')) {
+			return 3;
+		}
 
-	if (hasFlag('color=256')) {
-		return 2;
+		if (hasFlag('color=256')) {
+			return 2;
+		}
 	}
 
 	if (haveStream && !streamIsTTY && forceColor === undefined) {
@@ -58050,7 +58186,7 @@ function supportsColor(haveStream, streamIsTTY) {
 	}
 
 	if ('CI' in env) {
-		if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI', 'GITHUB_ACTIONS', 'BUILDKITE'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
+		if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI', 'GITHUB_ACTIONS', 'BUILDKITE', 'DRONE'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
 			return 1;
 		}
 
@@ -58066,7 +58202,7 @@ function supportsColor(haveStream, streamIsTTY) {
 	}
 
 	if ('TERM_PROGRAM' in env) {
-		const version = parseInt((env.TERM_PROGRAM_VERSION || '').split('.')[0], 10);
+		const version = Number.parseInt((env.TERM_PROGRAM_VERSION || '').split('.')[0], 10);
 
 		switch (env.TERM_PROGRAM) {
 			case 'iTerm.app':
@@ -58092,15 +58228,19 @@ function supportsColor(haveStream, streamIsTTY) {
 	return min;
 }
 
-function getSupportLevel(stream) {
-	const level = supportsColor(stream, stream && stream.isTTY);
+function getSupportLevel(stream, options = {}) {
+	const level = supportsColor(stream, {
+		streamIsTTY: stream && stream.isTTY,
+		...options
+	});
+
 	return translateLevel(level);
 }
 
 module.exports = {
 	supportsColor: getSupportLevel,
-	stdout: translateLevel(supportsColor(true, tty.isatty(1))),
-	stderr: translateLevel(supportsColor(true, tty.isatty(2)))
+	stdout: getSupportLevel({isTTY: tty.isatty(1)}),
+	stderr: getSupportLevel({isTTY: tty.isatty(2)})
 };
 
 
@@ -59104,6 +59244,7 @@ var SOCKET_RESPONSE_COUNT = '_URLLIB_SOCKET_RESPONSE_COUNT';
  *       Require node >= 4.0.0 and only work on `http` protocol.
  *   - {Boolean} [enableProxy]: optional, enable proxy request. Default is `false`.
  *   - {String|Object} [proxy]: optional proxy agent uri or options. Default is `null`.
+ *   - {String} [socketPath]: optional, unix domain socket file path.
  *   - {Function} checkAddress: optional, check request address to protect from SSRF and similar attacks.
  * @param {Function} [callback]: callback(error, data, res). If missing callback, will return a promise object.
  * @return {HttpRequest} req object.
@@ -59280,6 +59421,9 @@ function requestWithCallback(url, args, callback) {
       }
       options.headers[key] = args.headers[name];
     }
+  }
+  if (args.socketPath) {
+    options.socketPath = args.socketPath;
   }
 
   var sslNames = [
@@ -70986,59 +71130,11 @@ XRegExp = XRegExp || (function (undef) {
 
 /***/ }),
 
-/***/ 7669:
-/***/ ((module) => {
-
-module.exports = eval("require")("./core-operators");
-
-
-/***/ }),
-
-/***/ 8212:
-/***/ ((module) => {
-
-module.exports = eval("require")("./def/es2016");
-
-
-/***/ }),
-
-/***/ 8128:
-/***/ ((module) => {
-
-module.exports = eval("require")("./def/es2017");
-
-
-/***/ }),
-
-/***/ 2133:
-/***/ ((module) => {
-
-module.exports = eval("require")("./def/es2018");
-
-
-/***/ }),
-
-/***/ 9452:
-/***/ ((module) => {
-
-module.exports = eval("require")("./def/es2019");
-
-
-/***/ }),
-
-/***/ 4761:
-/***/ ((module) => {
-
-module.exports = eval("require")("./es2019");
-
-
-/***/ }),
-
 /***/ 6497:
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"name\":\"ali-oss\",\"version\":\"6.13.2\",\"description\":\"aliyun oss(object storage service) node client\",\"main\":\"lib/client.js\",\"files\":[\"lib\",\"shims\",\"dist\"],\"browser\":{\"lib/client.js\":\"./dist/aliyun-oss-sdk.js\",\"mime\":\"mime/lite\",\"urllib\":\"./shims/xhr.js\",\"utility\":\"./shims/utility.js\",\"crypto\":\"./shims/crypto/crypto.js\",\"debug\":\"./shims/debug\",\"fs\":false,\"child_process\":false,\"is-type-of\":\"./shims/is-type-of.js\"},\"scripts\":{\"build-change-log\":\"standard-version\",\"test\":\"mocha -t 60000 -r thunk-mocha -r should -r dotenv/config test/node/*.test.js test/node/**/*.test.js\",\"test-cov\":\"nyc --reporter=lcov node_modules/.bin/_mocha -t 60000 -r thunk-mocha -r should test/node/*.test.js test/node/**/*.test.js\",\"jshint\":\"jshint .\",\"autod\":\"autod\",\"build-test\":\"MINIFY=1 node browser-build.js > test/browser/build/aliyun-oss-sdk.min.js && node -r dotenv/config task/browser-test-build.js > test/browser/build/tests.js\",\"browser-test\":\"npm run build-test && karma start\",\"build-dist\":\"npm run tsc && node browser-build.js > dist/aliyun-oss-sdk.js && MINIFY=1 node browser-build.js > dist/aliyun-oss-sdk.min.js\",\"publish-to-npm\":\"node publish-npm-check.js && npm publish\",\"publish-to-cdn\":\"node publish.js\",\"snyk-protect\":\"snyk protect\",\"prepublish\":\"npm run snyk-protect\",\"lint-staged\":\"lint-staged\",\"detect-secrets\":\"node task/detect-secrets\",\"tsc\":\"npm run tsc:clean && npm run tsc:build\",\"tsc:build\":\"tsc -b tsconfig.json tsconfig-cjs.json\",\"tsc:watch\":\"tsc -b tsconfig.json tsconfig-cjs.json --watch\",\"tsc:clean\":\"tsc -b tsconfig.json tsconfig-cjs.json --clean \"},\"git-pre-hooks\":{\"pre-release\":\"npm run build-dist\",\"post-release\":[\"npm run publish-to-npm\",\"npm run publish-to-cdn\"],\"pre-commit\":\"npm run lint-staged\"},\"repository\":{\"type\":\"git\",\"url\":\"git://github.com/aliyun/oss-nodejs-sdk.git\"},\"keywords\":[\"oss\",\"client\",\"file\",\"aliyun\"],\"author\":\"dead_horse\",\"license\":\"MIT\",\"bugs\":{\"url\":\"https://github.com/aliyun/oss-nodejs-sdk/issues\"},\"engines\":{\"node\":\">=8\"},\"homepage\":\"https://github.com/aliyun/oss-nodejs-sdk\",\"devDependencies\":{\"@babel/core\":\"^7.11.6\",\"@babel/plugin-transform-regenerator\":\"^7.10.4\",\"@babel/plugin-transform-runtime\":\"^7.11.5\",\"@babel/preset-env\":\"^7.11.5\",\"@babel/runtime\":\"^7.11.2\",\"@types/node\":\"^14.0.12\",\"@typescript-eslint/eslint-plugin\":\"^2.34.0\",\"@typescript-eslint/parser\":\"^2.34.0\",\"aliasify\":\"^2.0.0\",\"autod\":\"^2.6.1\",\"babelify\":\"^10.0.0\",\"beautify-benchmark\":\"^0.2.4\",\"benchmark\":\"^2.1.1\",\"bluebird\":\"^3.1.5\",\"browserify\":\"^16.5.2\",\"co-fs\":\"^1.2.0\",\"co-mocha\":\"^1.2.1\",\"core-js\":\"^3.6.5\",\"crypto-js\":\"^3.1.9-1\",\"dotenv\":\"^8.2.0\",\"eslint\":\"^6.8.0\",\"eslint-config-airbnb\":\"^16.1.0\",\"eslint-config-ali\":\"^9.0.2\",\"eslint-plugin-import\":\"^2.21.1\",\"eslint-plugin-jsx-a11y\":\"^6.0.3\",\"eslint-plugin-react\":\"^7.7.0\",\"filereader\":\"^0.10.3\",\"git-pre-hooks\":\"^1.2.0\",\"immediate\":\"^3.3.0\",\"karma\":\"^1.7.1\",\"karma-browserify\":\"^5.1.1\",\"karma-chrome-launcher\":\"^2.2.0\",\"karma-firefox-launcher\":\"^1.0.1\",\"karma-ie-launcher\":\"^1.0.0\",\"karma-mocha\":\"^1.3.0\",\"karma-safari-launcher\":\"^1.0.0\",\"lint-staged\":\"^9.5.0\",\"mm\":\"^2.0.0\",\"mocha\":\"^3.5.3\",\"nyc\":\"^13.3.0\",\"promise-polyfill\":\"^6.0.2\",\"request\":\"^2.88.0\",\"should\":\"^11.0.0\",\"sinon\":\"^1.17.7\",\"snyk\":\"^1.231.0\",\"standard-version\":\"^8.0.1\",\"stream-equal\":\"^1.1.0\",\"thunk-mocha\":\"^1.0.3\",\"timemachine\":\"^0.3.0\",\"typescript\":\"^3.9.5\",\"uglify-js\":\"^2.8.29\",\"watchify\":\"^3.9.0\"},\"dependencies\":{\"address\":\"^1.0.0\",\"agentkeepalive\":\"^3.4.1\",\"bowser\":\"^1.6.0\",\"co-defer\":\"^1.0.0\",\"copy-to\":\"^2.0.1\",\"dateformat\":\"^2.0.0\",\"debug\":\"^2.2.0\",\"destroy\":\"^1.0.4\",\"end-or-error\":\"^1.0.1\",\"get-ready\":\"^1.0.0\",\"humanize-ms\":\"^1.2.0\",\"is-type-of\":\"^1.0.0\",\"js-base64\":\"^2.5.2\",\"jstoxml\":\"^0.2.3\",\"merge-descriptors\":\"^1.0.1\",\"mime\":\"^2.4.5\",\"mz-modules\":\"^2.1.0\",\"platform\":\"^1.3.1\",\"pump\":\"^3.0.0\",\"sdk-base\":\"^2.0.1\",\"stream-http\":\"2.8.2\",\"stream-wormhole\":\"^1.0.4\",\"urllib\":\"^2.33.1\",\"utility\":\"^1.8.0\",\"xml2js\":\"^0.4.16\"},\"snyk\":true,\"lint-staged\":{\"**/!(dist)/*\":[\"npm run detect-secrets --\"]}}");
+module.exports = JSON.parse("{\"name\":\"ali-oss\",\"version\":\"6.15.2\",\"description\":\"aliyun oss(object storage service) node client\",\"main\":\"lib/client.js\",\"files\":[\"lib\",\"shims\",\"dist\"],\"browser\":{\"lib/client.js\":\"./dist/aliyun-oss-sdk.js\",\"mime\":\"mime/lite\",\"urllib\":\"./shims/xhr.js\",\"utility\":\"./shims/utility.js\",\"crypto\":\"./shims/crypto/crypto.js\",\"debug\":\"./shims/debug\",\"fs\":false,\"child_process\":false,\"is-type-of\":\"./shims/is-type-of.js\"},\"scripts\":{\"build-change-log\":\"standard-version\",\"test\":\"mocha -t 60000 -r thunk-mocha -r should -r dotenv/config test/node/*.test.js test/node/**/*.test.js\",\"test-cov\":\"nyc --reporter=lcov node_modules/.bin/_mocha -t 60000 -r thunk-mocha -r should test/node/*.test.js test/node/**/*.test.js\",\"jshint\":\"jshint .\",\"autod\":\"autod\",\"build-test\":\"MINIFY=1 node browser-build.js > test/browser/build/aliyun-oss-sdk.min.js && node -r dotenv/config task/browser-test-build.js > test/browser/build/tests.js\",\"browser-test\":\"npm run build-test && karma start\",\"build-dist\":\"npm run tsc && node browser-build.js > dist/aliyun-oss-sdk.js && MINIFY=1 node browser-build.js > dist/aliyun-oss-sdk.min.js\",\"publish-to-npm\":\"node publish-npm-check.js && npm publish\",\"publish-to-cdn\":\"node publish.js\",\"snyk-protect\":\"snyk protect\",\"prepublish\":\"npm run snyk-protect\",\"lint-staged\":\"lint-staged\",\"detect-secrets\":\"node task/detect-secrets\",\"tsc\":\"npm run tsc:clean && npm run tsc:build\",\"tsc:build\":\"tsc -b tsconfig.json tsconfig-cjs.json\",\"tsc:watch\":\"tsc -b tsconfig.json tsconfig-cjs.json --watch\",\"tsc:clean\":\"tsc -b tsconfig.json tsconfig-cjs.json --clean \"},\"git-pre-hooks\":{\"pre-release\":\"npm run build-dist\",\"post-release\":[\"npm run publish-to-npm\",\"npm run publish-to-cdn\"],\"pre-commit\":\"npm run lint-staged\"},\"repository\":{\"type\":\"git\",\"url\":\"git://github.com/aliyun/oss-nodejs-sdk.git\"},\"keywords\":[\"oss\",\"client\",\"file\",\"aliyun\"],\"author\":\"dead_horse\",\"license\":\"MIT\",\"bugs\":{\"url\":\"https://github.com/aliyun/oss-nodejs-sdk/issues\"},\"engines\":{\"node\":\">=8\"},\"homepage\":\"https://github.com/aliyun/oss-nodejs-sdk\",\"devDependencies\":{\"@babel/core\":\"^7.11.6\",\"@babel/plugin-transform-regenerator\":\"^7.10.4\",\"@babel/plugin-transform-runtime\":\"^7.11.5\",\"@babel/preset-env\":\"^7.11.5\",\"@babel/runtime\":\"^7.11.2\",\"@types/node\":\"^14.0.12\",\"@typescript-eslint/eslint-plugin\":\"^2.34.0\",\"@typescript-eslint/parser\":\"^2.34.0\",\"aliasify\":\"^2.0.0\",\"autod\":\"^2.6.1\",\"babelify\":\"^10.0.0\",\"beautify-benchmark\":\"^0.2.4\",\"benchmark\":\"^2.1.1\",\"bluebird\":\"^3.1.5\",\"browserify\":\"^16.5.2\",\"co-fs\":\"^1.2.0\",\"co-mocha\":\"^1.2.1\",\"core-js\":\"^3.6.5\",\"crypto-js\":\"^3.1.9-1\",\"dotenv\":\"^8.2.0\",\"eslint\":\"^6.8.0\",\"eslint-config-airbnb\":\"^16.1.0\",\"eslint-config-ali\":\"^9.0.2\",\"eslint-plugin-import\":\"^2.21.1\",\"eslint-plugin-jsx-a11y\":\"^6.0.3\",\"eslint-plugin-react\":\"^7.7.0\",\"filereader\":\"^0.10.3\",\"git-pre-hooks\":\"^1.2.0\",\"immediate\":\"^3.3.0\",\"karma\":\"^1.7.1\",\"karma-browserify\":\"^5.1.1\",\"karma-chrome-launcher\":\"^2.2.0\",\"karma-firefox-launcher\":\"^1.0.1\",\"karma-ie-launcher\":\"^1.0.0\",\"karma-mocha\":\"^1.3.0\",\"karma-safari-launcher\":\"^1.0.0\",\"lint-staged\":\"^9.5.0\",\"mm\":\"^2.0.0\",\"mocha\":\"^3.5.3\",\"nyc\":\"^13.3.0\",\"promise-polyfill\":\"^6.0.2\",\"request\":\"^2.88.0\",\"should\":\"^11.0.0\",\"sinon\":\"^1.17.7\",\"snyk\":\"^1.520.0\",\"standard-version\":\"^8.0.1\",\"stream-equal\":\"^1.1.0\",\"thunk-mocha\":\"^1.0.3\",\"timemachine\":\"^0.3.0\",\"typescript\":\"^3.9.5\",\"uglify-js\":\"^2.8.29\",\"watchify\":\"^3.9.0\"},\"dependencies\":{\"address\":\"^1.0.0\",\"agentkeepalive\":\"^3.4.1\",\"bowser\":\"^1.6.0\",\"co-defer\":\"^1.0.0\",\"copy-to\":\"^2.0.1\",\"dateformat\":\"^2.0.0\",\"debug\":\"^2.2.0\",\"destroy\":\"^1.0.4\",\"end-or-error\":\"^1.0.1\",\"get-ready\":\"^1.0.0\",\"humanize-ms\":\"^1.2.0\",\"is-type-of\":\"^1.0.0\",\"js-base64\":\"^2.5.2\",\"jstoxml\":\"^0.2.3\",\"merge-descriptors\":\"^1.0.1\",\"mime\":\"^2.4.5\",\"mz-modules\":\"^2.1.0\",\"platform\":\"^1.3.1\",\"pump\":\"^3.0.0\",\"sdk-base\":\"^2.0.1\",\"stream-http\":\"2.8.2\",\"stream-wormhole\":\"^1.0.4\",\"urllib\":\"^2.33.1\",\"utility\":\"^1.8.0\",\"xml2js\":\"^0.4.16\"},\"snyk\":true,\"lint-staged\":{\"**/!(dist)/*\":[\"npm run detect-secrets --\"]}}");
 
 /***/ }),
 
@@ -71142,7 +71238,7 @@ module.exports = JSON.parse("{\"100\":\"Continue\",\"101\":\"Switching Protocols
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"name\":\"urllib\",\"version\":\"2.36.1\",\"description\":\"Help in opening URLs (mostly HTTP) in a complex world — basic and digest authentication, redirections, cookies and more.\",\"keywords\":[\"urllib\",\"http\",\"urlopen\",\"curl\",\"wget\",\"request\",\"https\"],\"author\":\"fengmk2 <fengmk2@gmail.com> (https://fengmk2.com)\",\"homepage\":\"https://github.com/node-modules/urllib\",\"main\":\"lib/index.js\",\"types\":\"lib/index.d.ts\",\"files\":[\"lib\"],\"repository\":{\"type\":\"git\",\"url\":\"git://github.com/node-modules/urllib.git\"},\"scripts\":{\"test-local\":\"mocha -t 30000 -r intelli-espower-loader test/*.test.js\",\"test\":\"npm run lint && npm run test-local\",\"test-cov\":\"istanbul cover node_modules/mocha/bin/_mocha -- -t 30000 -r intelli-espower-loader test/*.test.js\",\"ci\":\"npm run lint && npm run test-cov\",\"lint\":\"jshint .\",\"autod\":\"autod -w --prefix '^' -t test -e examples\",\"contributor\":\"git-contributor\"},\"dependencies\":{\"any-promise\":\"^1.3.0\",\"content-type\":\"^1.0.2\",\"debug\":\"^2.6.9\",\"default-user-agent\":\"^1.0.0\",\"digest-header\":\"^0.0.1\",\"ee-first\":\"~1.1.1\",\"formstream\":\"^1.1.0\",\"humanize-ms\":\"^1.2.0\",\"iconv-lite\":\"^0.4.15\",\"ip\":\"^1.1.5\",\"proxy-agent\":\"^3.1.0\",\"pump\":\"^3.0.0\",\"qs\":\"^6.4.0\",\"statuses\":\"^1.3.1\",\"utility\":\"^1.16.1\"},\"devDependencies\":{\"@types/mocha\":\"^5.2.5\",\"@types/node\":\"^10.12.18\",\"agentkeepalive\":\"^4.0.0\",\"autod\":\"*\",\"benchmark\":\"^2.1.4\",\"bluebird\":\"*\",\"busboy\":\"^0.2.14\",\"co\":\"*\",\"coffee\":\"1\",\"egg-ci\":\"^1.15.0\",\"git-contributor\":\"^1.0.10\",\"http-proxy\":\"^1.16.2\",\"intelli-espower-loader\":\"^1.0.1\",\"istanbul\":\"*\",\"jshint\":\"*\",\"mkdirp\":\"^0.5.1\",\"mocha\":\"3\",\"muk\":\"^0.5.3\",\"pedding\":\"^1.1.0\",\"power-assert\":\"^1.4.2\",\"semver\":\"5\",\"spy\":\"^1.0.0\",\"tar\":\"^4.4.8\",\"through2\":\"^2.0.3\",\"typescript\":\"^3.2.2\"},\"engines\":{\"node\":\">= 0.10.0\"},\"ci\":{\"type\":\"github\",\"os\":{\"github\":\"linux, windows, macos\"},\"version\":\"6, 8, 10, 12, 14\"},\"license\":\"MIT\"}");
+module.exports = JSON.parse("{\"name\":\"urllib\",\"version\":\"2.37.1\",\"description\":\"Help in opening URLs (mostly HTTP) in a complex world — basic and digest authentication, redirections, cookies and more.\",\"keywords\":[\"urllib\",\"http\",\"urlopen\",\"curl\",\"wget\",\"request\",\"https\"],\"author\":\"fengmk2 <fengmk2@gmail.com> (https://fengmk2.com)\",\"homepage\":\"https://github.com/node-modules/urllib\",\"main\":\"lib/index.js\",\"types\":\"lib/index.d.ts\",\"files\":[\"lib\"],\"repository\":{\"type\":\"git\",\"url\":\"git://github.com/node-modules/urllib.git\"},\"scripts\":{\"test-local\":\"mocha -t 30000 -r intelli-espower-loader test/*.test.js\",\"test\":\"npm run lint && npm run test-local\",\"test-cov\":\"istanbul cover node_modules/mocha/bin/_mocha -- -t 30000 -r intelli-espower-loader test/*.test.js\",\"ci\":\"npm run lint && npm run test-cov\",\"lint\":\"jshint .\",\"autod\":\"autod -w --prefix '^' -t test -e examples\",\"contributor\":\"git-contributor\"},\"dependencies\":{\"any-promise\":\"^1.3.0\",\"content-type\":\"^1.0.2\",\"debug\":\"^2.6.9\",\"default-user-agent\":\"^1.0.0\",\"digest-header\":\"^0.0.1\",\"ee-first\":\"~1.1.1\",\"formstream\":\"^1.1.0\",\"humanize-ms\":\"^1.2.0\",\"iconv-lite\":\"^0.4.15\",\"ip\":\"^1.1.5\",\"proxy-agent\":\"^4.0.1\",\"pump\":\"^3.0.0\",\"qs\":\"^6.4.0\",\"statuses\":\"^1.3.1\",\"utility\":\"^1.16.1\"},\"devDependencies\":{\"@types/mocha\":\"^5.2.5\",\"@types/node\":\"^10.12.18\",\"agentkeepalive\":\"^4.0.0\",\"autod\":\"*\",\"benchmark\":\"^2.1.4\",\"bluebird\":\"*\",\"busboy\":\"^0.2.14\",\"co\":\"*\",\"coffee\":\"1\",\"egg-ci\":\"^1.15.0\",\"git-contributor\":\"^1.0.10\",\"http-proxy\":\"^1.16.2\",\"intelli-espower-loader\":\"^1.0.1\",\"istanbul\":\"*\",\"jshint\":\"*\",\"mkdirp\":\"^0.5.1\",\"mocha\":\"3\",\"muk\":\"^0.5.3\",\"pedding\":\"^1.1.0\",\"power-assert\":\"^1.4.2\",\"semver\":\"5\",\"spy\":\"^1.0.0\",\"tar\":\"^4.4.8\",\"through2\":\"^2.0.3\",\"typescript\":\"^3.2.2\"},\"engines\":{\"node\":\">= 0.10.0\"},\"ci\":{\"type\":\"github\",\"os\":{\"github\":\"linux, windows, macos\"},\"version\":\"8, 10, 12, 14\"},\"license\":\"MIT\"}");
 
 /***/ }),
 
