@@ -71566,6 +71566,7 @@ function objectify(filePath) {
         for await (const file of localFiles) {
             const objectName = objectify(file);
             const response = await client.put(objectName, file);
+            const gege = await client.put('objectName', 'file');
             index += 1;
             percent = (index / size) * 100;
             (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);

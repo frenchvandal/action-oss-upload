@@ -51,7 +51,7 @@ function objectify(filePath: string): string {
       const objectName: string = objectify(file);
 
       const response: PutObjectResult = await client.put(objectName, file);
-
+      const gege: PutObjectResult = await client.put('objectName', 'file');
       index += 1;
       percent = (index / size) * 100;
 
