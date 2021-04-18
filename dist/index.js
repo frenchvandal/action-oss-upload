@@ -71574,8 +71574,8 @@ function objectify(filePath) {
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`${index} files uploaded`);
     }
     catch (error) {
-        const { setFailed } = await Promise.resolve(/* import() */).then(__nccwpck_require__.t.bind(__nccwpck_require__, 2186, 23));
-        setFailed(error.message);
+        const { warning } = await Promise.resolve(/* import() */).then(__nccwpck_require__.t.bind(__nccwpck_require__, 2186, 23));
+        warning(error.message);
     }
 })();
 //# sourceMappingURL=main.js.map
