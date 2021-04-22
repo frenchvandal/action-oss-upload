@@ -8,11 +8,7 @@ const isWindows: boolean = process.platform === 'win32';
 const processSlash: string = sep;
 const forwardSlash: string = posix.sep;
 
-const homeDir: string = join(
-  process.cwd(),
-  getInput('source') || 'public',
-  processSlash,
-);
+const homeDir: string = join(process.cwd(), getInput('source'), processSlash);
 
 const credentials: Options = {
   accessKeyId: getInput('accessKeyId', { required: true }),
@@ -65,7 +61,7 @@ function objectify(filePath: string): string {
 
     info(`${index} files uploaded`);
   } catch (error) {
-    const { warning } = await import('@actions/core');
-    warning(error.message);
+    const { setFailed } = await import('@actions/core');
+    setFailed(error.message);
   }
 })();

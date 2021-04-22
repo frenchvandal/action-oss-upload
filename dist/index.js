@@ -71540,7 +71540,7 @@ __nccwpck_require__.r(__webpack_exports__);
 const isWindows = process.platform === 'win32';
 const processSlash = path__WEBPACK_IMPORTED_MODULE_3__.sep;
 const forwardSlash = path__WEBPACK_IMPORTED_MODULE_3__.posix.sep;
-const homeDir = (0,path__WEBPACK_IMPORTED_MODULE_3__.join)(process.cwd(), (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('source') || 'public', processSlash);
+const homeDir = (0,path__WEBPACK_IMPORTED_MODULE_3__.join)(process.cwd(), (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('source'), processSlash);
 const credentials = {
     accessKeyId: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('accessKeyId', { required: true }),
     accessKeySecret: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('accessKeySecret', { required: true }),
@@ -71574,8 +71574,8 @@ function objectify(filePath) {
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`${index} files uploaded`);
     }
     catch (error) {
-        const { warning } = await Promise.resolve(/* import() */).then(__nccwpck_require__.t.bind(__nccwpck_require__, 2186, 23));
-        warning(error.message);
+        const { setFailed } = await Promise.resolve(/* import() */).then(__nccwpck_require__.t.bind(__nccwpck_require__, 2186, 23));
+        setFailed(error.message);
     }
 })();
 //# sourceMappingURL=main.js.map
