@@ -12,7 +12,7 @@
     "lint:fix": "eslint --fix ./src/**/*.ts",
     "format": "prettier --write **/*.ts **/*.json **/*.yaml",
     "format:check": "prettier --check **/*.ts **/*.json **/*.yaml",
-    "pre-checkin": "concurrently \"npm:format\" \"npm:build\"",
+    "pre-checkin": "concurrently \"npm:lint:fix\" \"npm:format\" \"npm:build\"",
     "prepare": "husky install"
   },
   "repository": "github:frenchvandal/action-oss-upload",
