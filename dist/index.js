@@ -71537,9 +71537,7 @@ __nccwpck_require__.r(__webpack_exports__);
 
 
 
-const isWindows = process.platform === 'win32';
 const processSlash = path__WEBPACK_IMPORTED_MODULE_3__.sep;
-const forwardSlash = path__WEBPACK_IMPORTED_MODULE_3__.posix.sep;
 const homeDir = (0,path__WEBPACK_IMPORTED_MODULE_3__.join)(process.cwd(), (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('source'), processSlash);
 const credentials = {
     accessKeyId: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('accessKeyId', { required: true }),
@@ -71548,17 +71546,10 @@ const credentials = {
     region: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('region', { required: true }),
 };
 const client = new (ali_oss__WEBPACK_IMPORTED_MODULE_2___default())(credentials);
-function objectify(filePath) {
-    let fileToObject = (0,path__WEBPACK_IMPORTED_MODULE_3__.relative)(homeDir, filePath);
-    if (isWindows) {
-        fileToObject = fileToObject.split(processSlash).join(forwardSlash);
-    }
-    return fileToObject;
-}
-function objectifye(filePath, baseName) {
-    let fileToObject = filePath.split(path__WEBPACK_IMPORTED_MODULE_3__.sep);
+function objectify(filePath, baseName) {
+    let fileToObject = filePath.split(processSlash);
     if (baseName) {
-        const forDeletion = baseName.split(path__WEBPACK_IMPORTED_MODULE_3__.sep);
+        const forDeletion = baseName.split(processSlash);
         fileToObject = fileToObject.filter((item) => !forDeletion.includes(item));
     }
     const objectFile = fileToObject.join(path__WEBPACK_IMPORTED_MODULE_3__.posix.sep);
@@ -71573,11 +71564,10 @@ function objectifye(filePath, baseName) {
         const localFiles = uploadDir.globGenerator();
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup)(`${size} files to upload`);
         for await (const file of localFiles) {
-            const objectName = objectify(file);
+            const objectName = objectify(file, homeDir);
             const response = await client.put(objectName, file);
             index += 1;
             percent = (index / size) * 100;
-            (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`objectifye: ${objectifye(file, homeDir)}`);
             (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);
         }
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup)();
