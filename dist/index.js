@@ -71555,6 +71555,15 @@ function objectify(filePath) {
     }
     return fileToObject;
 }
+function objectifye(filePath, baseName) {
+    let fileToObject = filePath.split(path__WEBPACK_IMPORTED_MODULE_3__.sep);
+    if (baseName) {
+        const forDeletion = baseName.split(path__WEBPACK_IMPORTED_MODULE_3__.sep);
+        fileToObject = fileToObject.filter((item) => !forDeletion.includes(item));
+    }
+    const objectFile = fileToObject.join(path__WEBPACK_IMPORTED_MODULE_3__.posix.sep);
+    return objectFile;
+}
 (async () => {
     try {
         let index = 0;
@@ -71568,6 +71577,7 @@ function objectify(filePath) {
             const response = await client.put(objectName, file);
             index += 1;
             percent = (index / size) * 100;
+            (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`objectifye: ${objectifye(file, homeDir)}`);
             (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);
         }
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup)();

@@ -29,6 +29,19 @@ function objectify(filePath: string): string {
   return fileToObject;
 }
 
+function objectifye(filePath: string, baseName?: string): string {
+  let fileToObject: string[] = filePath.split(sep);
+
+  if (baseName) {
+    const forDeletion: string[] = baseName.split(sep);
+    fileToObject = fileToObject.filter((item) => !forDeletion.includes(item));
+  }
+
+  const objectFile: string = fileToObject.join(posix.sep);
+
+  return objectFile;
+}
+
 (async (): Promise<void> => {
   try {
     let index = 0;
@@ -50,6 +63,8 @@ function objectify(filePath: string): string {
 
       index += 1;
       percent = (index / size) * 100;
+
+      info(`objectifye: ${objectifye(file, homeDir)}`);
 
       info(
         `\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(
