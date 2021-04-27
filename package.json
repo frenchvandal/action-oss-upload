@@ -13,7 +13,8 @@
     "format": "prettier --write **/*.ts **/*.json **/*.yaml",
     "format:check": "prettier --check **/*.ts **/*.json **/*.yaml",
     "pre-checkin": "concurrently \"npm:lint:fix\" \"npm:format\" \"npm:build\"",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "test": "testyts"
   },
   "repository": "github:frenchvandal/action-oss-upload",
   "keywords": [

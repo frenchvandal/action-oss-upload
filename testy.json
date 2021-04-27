@@ -1,5 +1,6 @@
 {
   "include": ["**/*.spec.ts"],
+  "tsconfig": "./tsconfig.json",
   "reporter": "TAP",
   "timeout": 10000
 }
