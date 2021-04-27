@@ -16,12 +16,20 @@ const credentials: Options = {
 
 const client: OSS = new OSS(credentials);
 
-function objectify(filePath: string, baseName?: string): string {
+function objectify(
+  filePath: string,
+  baseName?: string,
+  prefix?: string,
+): string {
   let fileToObject: string[] = filePath.split(processSlash);
 
   if (baseName) {
     const forDeletion: string[] = baseName.split(processSlash);
     fileToObject = fileToObject.filter((item) => !forDeletion.includes(item));
+  }
+
+  if (prefix) {
+    fileToObject.unshift(prefix);
   }
   const objectFile: string = fileToObject.join(posix.sep);
 
