@@ -71546,11 +71546,14 @@ const credentials = {
     region: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('region', { required: true }),
 };
 const client = new (ali_oss__WEBPACK_IMPORTED_MODULE_2___default())(credentials);
-function objectify(filePath, baseName) {
+function objectify(filePath, baseName, prefix) {
     let fileToObject = filePath.split(processSlash);
     if (baseName) {
         const forDeletion = baseName.split(processSlash);
         fileToObject = fileToObject.filter((item) => !forDeletion.includes(item));
+    }
+    if (prefix) {
+        fileToObject.unshift(prefix);
     }
     const objectFile = fileToObject.join(path__WEBPACK_IMPORTED_MODULE_3__.posix.sep);
     return objectFile;
