@@ -10,7 +10,7 @@ inputs:
     description: 'OSS bucket name'
     required: true
   region:
-    description: 'Endpoint'
+    description: 'OSS Region ID'
     required: true
   accessKeyId:
     description: 'Access Key ID'
