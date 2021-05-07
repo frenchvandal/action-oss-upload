@@ -1,6 +1,6 @@
 import { endGroup, getInput, info, startGroup } from '@actions/core';
 import { create, Globber } from '@actions/glob';
-import OSS, { Options, PutObjectResult } from 'ali-oss';
+import OSS, { Options, PutObjectOptions, PutObjectResult } from 'ali-oss';
 import { join, posix, sep } from 'path';
 
 const processSlash: string = sep;
@@ -12,6 +12,10 @@ const credentials: Options = {
   accessKeySecret: getInput('accessKeySecret', { required: true }),
   bucket: getInput('bucket', { required: true }),
   region: getInput('region', { required: true }),
+};
+
+const objectOptions: PutObjectOptions = {
+  headers: { 'Cache-Control': 'must-revalidate, max-age=31536000' },
 };
 
 const client: OSS = new OSS(credentials);
@@ -53,7 +57,11 @@ function objectify(
     for await (const file of localFiles) {
       const objectName: string = objectify(file, homeDir);
 
-      const response: PutObjectResult = await client.put(objectName, file);
+      const response: PutObjectResult = await client.put(
+        objectName,
+        file,
+        objectOptions,
+      );
 
       index += 1;
       percent = (index / size) * 100;
