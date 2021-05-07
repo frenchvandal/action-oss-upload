@@ -14,9 +14,9 @@ const credentials: Options = {
   region: getInput('region', { required: true }),
 };
 
-// const objectOptions: PutObjectOptions = {
-//   headers: { 'Cache-Control': 'must-revalidate, max-age=31536000' },
-// };
+const objectOptions: PutObjectOptions = {
+  headers: { 'Cache-Control': 'must-revalidate, max-age=31536000' },
+};
 
 const client: OSS = new OSS(credentials);
 
@@ -60,7 +60,7 @@ function objectify(
       const response: PutObjectResult = await client.put(
         objectName,
         file,
-        //  objectOptions,
+        objectOptions,
       );
 
       index += 1;
