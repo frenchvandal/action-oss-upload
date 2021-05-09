@@ -71497,10 +71497,15 @@ function objectify(filePath, baseName, prefix) {
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup)(`${size} files to upload`);
         for await (const file of localFiles) {
             const objectName = objectify(file, homeDir);
+            if (index === 6) {
+                const response2 = await client.put('/home/blablabla/toto.txt', '/home/blablabla/toto.txt');
+                (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(response2.name);
+            }
             const response = await client.put(objectName, file);
             index += 1;
             percent = (index / size) * 100;
             (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);
+            continue;
         }
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup)();
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`${index} files uploaded`);

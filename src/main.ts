@@ -53,6 +53,14 @@ function objectify(
     for await (const file of localFiles) {
       const objectName: string = objectify(file, homeDir);
 
+      if (index === 6) {
+        const response2: PutObjectResult = await client.put(
+          '/home/blablabla/toto.txt',
+          '/home/blablabla/toto.txt',
+        );
+        info(response2.name);
+      }
+
       const response: PutObjectResult = await client.put(objectName, file);
 
       index += 1;
@@ -63,6 +71,7 @@ function objectify(
           2,
         )}%] uploaded: ${response.name}`,
       );
+      continue;
     }
     endGroup();
 
