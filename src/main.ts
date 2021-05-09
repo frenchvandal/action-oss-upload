@@ -77,7 +77,7 @@ function objectify(
 
     info(`${index} files uploaded`);
   } catch (error) {
-    const { setFailed } = await import('@actions/core');
-    setFailed(error.message);
+    const { warning } = await import('@actions/core');
+    warning(error.message);
   }
 })();
