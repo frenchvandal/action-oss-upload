@@ -1,4 +1,4 @@
-import { endGroup, getInput, info, startGroup } from '@actions/core';
+import { getInput, info } from '@actions/core';
 import { create, Globber } from '@actions/glob';
 import OSS, { Options, PutObjectResult } from 'ali-oss';
 import { join, posix, sep } from 'path';
@@ -49,17 +49,10 @@ function objectify(
       unknown
     > = uploadDir.globGenerator();
 
-    startGroup(`${size} files to upload`);
+    info(`${size} files to upload`);
+
     for await (const file of localFiles) {
       const objectName: string = objectify(file, homeDir);
-
-      if (index === 6) {
-        const response2: PutObjectResult = await client.put(
-          '/home/blablabla/toto.txt',
-          '/home/blablabla/toto.txt',
-        );
-        info(response2.name);
-      }
 
       const response: PutObjectResult = await client.put(objectName, file);
 
@@ -67,13 +60,9 @@ function objectify(
       percent = (index / size) * 100;
 
       info(
-        `\u001b[38;2;0;128;0m[${index}/${size}, ${percent.toFixed(
-          2,
-        )}%] uploaded: ${response.name}`,
+        `[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`,
       );
-      continue;
     }
-    endGroup();
 
     info(`${index} files uploaded`);
   } catch (error) {
