@@ -53818,8 +53818,13 @@ function objectify(filePath, baseName, prefix) {
     (0, import_core.info)(`${size} files to upload`);
     const requests = localFiles.map(async (file) => client.put(objectify(file, homeDir), file));
     const responses = Promise.allSettled(requests);
+    (0, import_core.info)("console.log(responses)");
+    console.log(responses);
     for (const resp of await responses) {
+      (0, import_core.info)("console.log(resp)");
+      (0, import_core.info)(" ");
       console.log(resp);
+      (0, import_core.info)(" ");
     }
     for await (const file of localFiles) {
       const objectName = objectify(file, homeDir);
