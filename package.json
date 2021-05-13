@@ -58,7 +58,11 @@
     "typescript": "^4.2.4"
   },
   "lint-staged": {
-    "*.{js,json,md,ts,yaml}": "prettier --write"
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,json,md,yaml}": "prettier --write"
   },
   "prettier": {
     "singleQuote": true,
