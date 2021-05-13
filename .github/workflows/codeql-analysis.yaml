@@ -1,0 +1,43 @@
+name: 'CodeQL'
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - src
+  pull_request:
+    branches: [master]
+    paths:
+      - src
+  schedule:
+    - cron: '37 3 * * 2'
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-20.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Compile TypeScript
+        run: tsc
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: ${{ matrix.language }}
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v1
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1
