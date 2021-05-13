@@ -42,11 +42,21 @@ function objectify(
     let percent = 0;
 
     const uploadDir: Globber = await create(`${homeDir}**${processSlash}*.*`);
-    const size: number = (await uploadDir.glob()).length;
-    const localFiles: AsyncGenerator<string, void, unknown> =
-      uploadDir.globGenerator();
+    const localFiles: string[] = await uploadDir.glob();
+    const size: number = localFiles.length;
 
     info(`${size} files to upload`);
+
+    const requests = localFiles.map(async (file) =>
+      client.put(objectify(file, homeDir), file),
+    );
+
+    const responses = Promise.allSettled(requests);
+
+    for (const resp of await responses) {
+      // eslint-disable-next-line no-console
+      console.log(resp);
+    }
 
     for await (const file of localFiles) {
       const objectName: string = objectify(file, homeDir);

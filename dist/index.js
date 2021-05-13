@@ -53813,9 +53813,14 @@ function objectify(filePath, baseName, prefix) {
     let index = 0;
     let percent = 0;
     const uploadDir = await (0, import_glob.create)(`${homeDir}**${processSlash}*.*`);
-    const size = (await uploadDir.glob()).length;
-    const localFiles = uploadDir.globGenerator();
+    const localFiles = await uploadDir.glob();
+    const size = localFiles.length;
     (0, import_core.info)(`${size} files to upload`);
+    const requests = localFiles.map(async (file) => client.put(objectify(file, homeDir), file));
+    const responses = Promise.allSettled(requests);
+    for (const resp of await responses) {
+      console.log(resp);
+    }
     for await (const file of localFiles) {
       const objectName = objectify(file, homeDir);
       const response = await client.put(objectName, file);
