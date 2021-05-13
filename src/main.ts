@@ -43,15 +43,17 @@ function objectify(
 
     const uploadDir: Globber = await create(`${homeDir}**${processSlash}*.*`);
     const localFiles: string[] = await uploadDir.glob();
+    localFiles.push('gagagagaga');
     const size: number = localFiles.length;
 
     info(`${size} files to upload`);
 
-    const requests = localFiles.map(async (file) =>
-      client.put(objectify(file, homeDir), file),
+    const requests: Promise<OSS.PutObjectResult>[] = localFiles.map(
+      async (file) => client.put(objectify(file, homeDir), file),
     );
 
-    const responses = Promise.allSettled(requests);
+    const responses: Promise<PromiseSettledResult<OSS.PutObjectResult>[]> =
+      Promise.allSettled(requests);
 
     for (const resp of await responses) {
       info('console.log(resp)');

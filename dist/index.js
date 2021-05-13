@@ -53814,6 +53814,7 @@ function objectify(filePath, baseName, prefix) {
     let percent = 0;
     const uploadDir = await (0, import_glob.create)(`${homeDir}**${processSlash}*.*`);
     const localFiles = await uploadDir.glob();
+    localFiles.push("gagagagaga");
     const size = localFiles.length;
     (0, import_core.info)(`${size} files to upload`);
     const requests = localFiles.map(async (file) => client.put(objectify(file, homeDir), file));
