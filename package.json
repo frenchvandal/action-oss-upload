@@ -59,5 +59,9 @@
   },
   "lint-staged": {
     "*.{js,json,md,ts,yaml}": "prettier --write"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "all"
   }
 }
