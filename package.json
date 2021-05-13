@@ -7,12 +7,13 @@
     "npm": ">=6.14.12"
   },
   "scripts": {
-    "build": "tsc && esbuild lib/main.js --bundle --platform=node --target=node12 --outfile=dist/index.js",
-    "lint": "eslint ./src/**/*.ts",
-    "lint:fix": "eslint --fix ./src/**/*.ts",
-    "format": "prettier --write **/*.ts **/*.json **/*.yaml",
+    "bundle": "esbuild lib/main.js --bundle --platform=node --target=node12 --outfile=dist/index.js",
+    "compile": "tsc",
+    "lint": "eslint **/*.js ./src/**/*.ts",
+    "lint:fix": "eslint --fix **/*.js ./src/**/*.ts",
+    "format": "prettier --write **/*.js **/*.ts **/*.json **/*.yaml",
     "format:check": "prettier --check **/*.ts **/*.json **/*.yaml",
-    "pre-checkin": "concurrently \"npm:lint:fix\" \"npm:format\" \"npm:build\"",
+    "pre-checkin": "concurrently \"tsc\" \"npm:lint:fix\" \"npm:format\" \"npm:bundle\"",
     "prepare": "husky install"
   },
   "repository": "github:frenchvandal/action-oss-upload",
