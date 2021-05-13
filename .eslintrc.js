@@ -11,6 +11,7 @@ module.exports = {
     sourceType: 'module',
     project: './tsconfig.json',
   },
+  ignorePatterns: ['.eslintrc.js', 'dist', 'node_modules'],
   rules: {
     'prettier/prettier': [
       'error',

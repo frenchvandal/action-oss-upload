@@ -32,7 +32,6 @@
     "@actions/core": "^1.2.7",
     "@actions/glob": "^0.1.1",
     "ali-oss": "^6.15.2",
-    "esbuild": "^0.11.20",
     "path": "^0.12.7"
   },
   "devDependencies": {
@@ -48,6 +47,7 @@
     "@typescript-eslint/eslint-plugin": "^4.23.0",
     "@typescript-eslint/parser": "^4.23.0",
     "concurrently": "^6.1.0",
+    "esbuild": "^0.11.20",
     "eslint": "^7.26.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^3.4.0",
