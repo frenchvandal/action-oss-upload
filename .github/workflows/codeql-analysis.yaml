@@ -8,8 +8,6 @@ on:
       - src
   pull_request:
     branches: [master]
-    paths:
-      - src
   schedule:
     - cron: '37 3 * * 2'
 
@@ -40,7 +38,9 @@ jobs:
             ${{ runner.os }}-
 
       - name: Install Dependencies
-        run: npm install
+        run: |
+          npm install -g npm@latest
+          npm install
 
       - name: Compile TypeScript
         run: tsc
