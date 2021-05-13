@@ -20636,9 +20636,9 @@ var require_dist = __commonJS({
   }
 });
 
-// node_modules/ftp/node_modules/isarray/index.js
+// node_modules/isarray/index.js
 var require_isarray = __commonJS({
-  "node_modules/ftp/node_modules/isarray/index.js"(exports2, module2) {
+  "node_modules/isarray/index.js"(exports2, module2) {
     module2.exports = Array.isArray || function(arr) {
       return Object.prototype.toString.call(arr) == "[object Array]";
     };

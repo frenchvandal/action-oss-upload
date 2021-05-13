@@ -1,10 +1,6 @@
 {
   "plugins": ["@typescript-eslint", "prettier"],
-  "extends": [
-    "eslint:recommended",
-    "plugin:github/recommended",
-    "plugin:prettier/recommended"
-  ],
+  "extends": ["eslint:recommended", "plugin:prettier/recommended"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": 2020,
@@ -25,6 +21,7 @@
     "no-shadow": "off",
     "no-unreachable": "off",
     "no-unused-vars": "off",
+    "semi": "off",
     "@typescript-eslint/no-unused-vars": "error",
     "@typescript-eslint/explicit-member-accessibility": [
       "error",
@@ -66,7 +63,6 @@
     "@typescript-eslint/promise-function-async": "error",
     "@typescript-eslint/require-array-sort-compare": "error",
     "@typescript-eslint/restrict-plus-operands": "error",
-    "semi": "off",
     "@typescript-eslint/semi": "off",
     "@typescript-eslint/type-annotation-spacing": "off",
     "@typescript-eslint/unbound-method": "error"
