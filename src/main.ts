@@ -52,9 +52,6 @@ function objectify(
     );
 
     const responses = Promise.allSettled(requests);
-    info('console.log(responses)');
-    // eslint-disable-next-line no-console
-    console.log(responses);
 
     for (const resp of await responses) {
       info('console.log(resp)');
@@ -63,6 +60,10 @@ function objectify(
       console.log(resp);
       info(' ');
     }
+
+    info('console.log(responses)');
+    // eslint-disable-next-line no-console
+    console.log(responses);
 
     for await (const file of localFiles) {
       const objectName: string = objectify(file, homeDir);
