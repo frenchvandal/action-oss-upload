@@ -9,11 +9,11 @@
   "scripts": {
     "bundle": "esbuild lib/main.js --bundle --platform=node --target=node12 --outfile=dist/index.js",
     "compile": "tsc && prettier --write ./lib/**/*.js",
-    "lint": "eslint **/*.js ./src/**/*.ts",
-    "lint:fix": "eslint --fix **/*.js ./src/**/*.ts",
-    "format": "prettier --write **/*.js **/*.json **/*.md **/*.ts **/*.yaml",
+    "lint": "eslint ./src/**/*.ts",
+    "lint:fix": "eslint --fix ./src/**/*.ts",
     "format:check": "prettier --check **/*.js **/*.json **/*.md **/*.ts **/*.yaml",
-    "build": "concurrently \"npm:compile\" \"npm:lint:fix\" \"npm:format\" \"npm:bundle\"",
+    "format:fix": "prettier --write **/*.js **/*.json **/*.md **/*.ts **/*.yaml",
+    "build": "concurrently \"npm:compile\" \"npm:lint:fix\" \"npm:format:fix\" \"npm:bundle\"",
     "prepare": "husky install"
   },
   "repository": "github:frenchvandal/action-oss-upload",
