@@ -1,2 +1,8 @@
+text=auto
 /dist/** linguist-generated=true
 /lib/** linguist-generated=true
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.md  text diff=markdown
+*.png binary
+*.svg text
