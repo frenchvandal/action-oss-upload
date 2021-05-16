@@ -49,7 +49,7 @@
     "@types/standard-version": "^7.0.0",
     "@typescript-eslint/eslint-plugin": "^4.23.0",
     "@typescript-eslint/parser": "^4.23.0",
-    "esbuild": "^0.11.22",
+    "esbuild": "^0.11.23",
     "eslint": "^7.26.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^3.4.0",
@@ -68,6 +68,16 @@
   },
   "prettier": {
     "singleQuote": true,
-    "trailingComma": "all"
+    "trailingComma": "all",
+    "overrides": [
+      {
+        "files": "dist/**/*.js",
+        "options": {
+          "printWidth": 120,
+          "singleQuote": false,
+          "trailingComma": "none"
+        }
+      }
+    ]
   }
 }
