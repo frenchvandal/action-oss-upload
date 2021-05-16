@@ -7,14 +7,18 @@
     "npm": ">=6.14.12"
   },
   "scripts": {
-    "bundle": "esbuild lib/main.js --bundle --platform=node --target=node12 --outfile=dist/index.js",
-    "compile": "tsc && prettier --write lib/**/*.js",
-    "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint --fix src/**/*.ts",
+    "precompile": "npm run lint && npm run format",
+    "compile": "tsc",
+    "postcompile": "prettier --write lib/**/*.js",
+    "lint:check": "eslint src/**/*.ts",
+    "lint": "eslint --fix src/**/*.ts",
     "format:check": "prettier --check **/*.js **/*.json **/*.md **/*.ts **/*.yaml",
-    "format:fix": "prettier --write **/*.js **/*.json **/*.md **/*.ts **/*.yaml",
-    "build": "concurrently \"npm:compile\" \"npm:lint:fix\" \"npm:format:fix\" \"npm:bundle\"",
-    "prepare": "husky install"
+    "format": "prettier --write **/*.js **/*.json **/*.md **/*.ts **/*.yaml",
+    "prebuild": "npm run compile",
+    "build": "esbuild lib/main.js --bundle --platform=node --target=node12 --outfile=dist/index.js",
+    "postbuild": "prettier --write dist/**/*.js",
+    "update": "npx typesync && npx npm-check-updates -u",
+    "postupdate": "npm install && npm update"
   },
   "repository": "github:frenchvandal/action-oss-upload",
   "keywords": [
@@ -38,7 +42,6 @@
     "@commitlint/cli": "^12.1.4",
     "@commitlint/config-conventional": "^12.1.4",
     "@types/ali-oss": "^6.0.8",
-    "@types/concurrently": "^6.0.1",
     "@types/eslint": "^7.2.10",
     "@types/eslint-plugin-prettier": "^3.1.0",
     "@types/node": "^15.3.0",
@@ -46,7 +49,6 @@
     "@types/standard-version": "^7.0.0",
     "@typescript-eslint/eslint-plugin": "^4.23.0",
     "@typescript-eslint/parser": "^4.23.0",
-    "concurrently": "^6.1.0",
     "esbuild": "^0.11.22",
     "eslint": "^7.26.0",
     "eslint-config-prettier": "^8.3.0",
