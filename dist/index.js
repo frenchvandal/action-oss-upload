@@ -62140,9 +62140,7 @@ function objectify(filePath, baseName, prefix) {
     const forDeletion = baseName.split(processSlash);
     fileToObject = fileToObject.filter((item) => !forDeletion.includes(item));
   }
-  if (prefix) {
-    fileToObject.unshift(prefix);
-  }
+  if (prefix) fileToObject.unshift(prefix);
   const objectFile = fileToObject.join(import_path.posix.sep);
   return objectFile;
 }

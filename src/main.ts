@@ -28,9 +28,8 @@ function objectify(
     fileToObject = fileToObject.filter((item) => !forDeletion.includes(item));
   }
 
-  if (prefix) {
-    fileToObject.unshift(prefix);
-  }
+  if (prefix) fileToObject.unshift(prefix);
+
   const objectFile: string = fileToObject.join(posix.sep);
 
   return objectFile;

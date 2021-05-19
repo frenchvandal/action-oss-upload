@@ -18,7 +18,7 @@ module.exports = {
       {
         endOfLine: 'auto',
         'comma-dangle': ['error', 'always-multiline'],
-        curly: ['error', 'multi-or-nest'],
+        curly: ['error', 'all'],
       },
     ],
   },
