@@ -64,6 +64,7 @@ var require_utils = __commonJS({
   "node_modules/@actions/core/lib/utils.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.toCommandValue = void 0;
     function toCommandValue(input) {
       if (input === null || input === void 0) {
         return "";
@@ -80,18 +81,44 @@ var require_utils = __commonJS({
 var require_command = __commonJS({
   "node_modules/@actions/core/lib/command.js"(exports2) {
     "use strict";
+    var __createBinding =
+      (exports2 && exports2.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            Object.defineProperty(o, k2, {
+              enumerable: true,
+              get: function () {
+                return m[k];
+              }
+            });
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            o[k2] = m[k];
+          });
+    var __setModuleDefault =
+      (exports2 && exports2.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, "default", { enumerable: true, value: v });
+          }
+        : function (o, v) {
+            o["default"] = v;
+          });
     var __importStar =
       (exports2 && exports2.__importStar) ||
       function (mod) {
         if (mod && mod.__esModule) return mod;
         var result = {};
         if (mod != null) {
-          for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+          for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
         }
-        result["default"] = mod;
+        __setModuleDefault(result, mod);
         return result;
       };
     Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.issue = exports2.issueCommand = void 0;
     var os = __importStar(require("os"));
     var utils_1 = require_utils();
     function issueCommand(command, properties, message) {
@@ -155,18 +182,44 @@ var require_command = __commonJS({
 var require_file_command = __commonJS({
   "node_modules/@actions/core/lib/file-command.js"(exports2) {
     "use strict";
+    var __createBinding =
+      (exports2 && exports2.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            Object.defineProperty(o, k2, {
+              enumerable: true,
+              get: function () {
+                return m[k];
+              }
+            });
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            o[k2] = m[k];
+          });
+    var __setModuleDefault =
+      (exports2 && exports2.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, "default", { enumerable: true, value: v });
+          }
+        : function (o, v) {
+            o["default"] = v;
+          });
     var __importStar =
       (exports2 && exports2.__importStar) ||
       function (mod) {
         if (mod && mod.__esModule) return mod;
         var result = {};
         if (mod != null) {
-          for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+          for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
         }
-        result["default"] = mod;
+        __setModuleDefault(result, mod);
         return result;
       };
     Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.issueCommand = void 0;
     var fs = __importStar(require("fs"));
     var os = __importStar(require("os"));
     var utils_1 = require_utils();
@@ -190,6 +243,42 @@ var require_file_command = __commonJS({
 var require_core = __commonJS({
   "node_modules/@actions/core/lib/core.js"(exports2) {
     "use strict";
+    var __createBinding =
+      (exports2 && exports2.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            Object.defineProperty(o, k2, {
+              enumerable: true,
+              get: function () {
+                return m[k];
+              }
+            });
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            o[k2] = m[k];
+          });
+    var __setModuleDefault =
+      (exports2 && exports2.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, "default", { enumerable: true, value: v });
+          }
+        : function (o, v) {
+            o["default"] = v;
+          });
+    var __importStar =
+      (exports2 && exports2.__importStar) ||
+      function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) {
+          for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+        }
+        __setModuleDefault(result, mod);
+        return result;
+      };
     var __awaiter =
       (exports2 && exports2.__awaiter) ||
       function (thisArg, _arguments, P, generator) {
@@ -221,18 +310,27 @@ var require_core = __commonJS({
           step((generator = generator.apply(thisArg, _arguments || [])).next());
         });
       };
-    var __importStar =
-      (exports2 && exports2.__importStar) ||
-      function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) {
-          for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-        }
-        result["default"] = mod;
-        return result;
-      };
     Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.getState =
+      exports2.saveState =
+      exports2.group =
+      exports2.endGroup =
+      exports2.startGroup =
+      exports2.info =
+      exports2.warning =
+      exports2.error =
+      exports2.debug =
+      exports2.isDebug =
+      exports2.setFailed =
+      exports2.setCommandEcho =
+      exports2.setOutput =
+      exports2.getBooleanInput =
+      exports2.getInput =
+      exports2.addPath =
+      exports2.setSecret =
+      exports2.exportVariable =
+      exports2.ExitCode =
+        void 0;
     var command_1 = require_command();
     var file_command_1 = require_file_command();
     var utils_1 = require_utils();
@@ -275,9 +373,22 @@ var require_core = __commonJS({
       if (options && options.required && !val) {
         throw new Error(`Input required and not supplied: ${name}`);
       }
+      if (options && options.trimWhitespace === false) {
+        return val;
+      }
       return val.trim();
     }
     exports2.getInput = getInput2;
+    function getBooleanInput(name, options) {
+      const trueValue = ["true", "True", "TRUE"];
+      const falseValue = ["false", "False", "FALSE"];
+      const val = getInput2(name, options);
+      if (trueValue.includes(val)) return true;
+      if (falseValue.includes(val)) return false;
+      throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}
+Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
+    }
+    exports2.getBooleanInput = getBooleanInput;
     function setOutput(name, value) {
       process.stdout.write(os.EOL);
       command_1.issueCommand("set-output", { name }, value);
@@ -348,18 +459,44 @@ var require_core = __commonJS({
 var require_internal_glob_options_helper = __commonJS({
   "node_modules/@actions/glob/lib/internal-glob-options-helper.js"(exports2) {
     "use strict";
+    var __createBinding =
+      (exports2 && exports2.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            Object.defineProperty(o, k2, {
+              enumerable: true,
+              get: function () {
+                return m[k];
+              }
+            });
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            o[k2] = m[k];
+          });
+    var __setModuleDefault =
+      (exports2 && exports2.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, "default", { enumerable: true, value: v });
+          }
+        : function (o, v) {
+            o["default"] = v;
+          });
     var __importStar =
       (exports2 && exports2.__importStar) ||
       function (mod) {
         if (mod && mod.__esModule) return mod;
         var result = {};
         if (mod != null) {
-          for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+          for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
         }
-        result["default"] = mod;
+        __setModuleDefault(result, mod);
         return result;
       };
     Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.getOptions = void 0;
     var core = __importStar(require_core());
     function getOptions(copy3) {
       const result = {
@@ -391,15 +528,40 @@ var require_internal_glob_options_helper = __commonJS({
 var require_internal_path_helper = __commonJS({
   "node_modules/@actions/glob/lib/internal-path-helper.js"(exports2) {
     "use strict";
+    var __createBinding =
+      (exports2 && exports2.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            Object.defineProperty(o, k2, {
+              enumerable: true,
+              get: function () {
+                return m[k];
+              }
+            });
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            o[k2] = m[k];
+          });
+    var __setModuleDefault =
+      (exports2 && exports2.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, "default", { enumerable: true, value: v });
+          }
+        : function (o, v) {
+            o["default"] = v;
+          });
     var __importStar =
       (exports2 && exports2.__importStar) ||
       function (mod) {
         if (mod && mod.__esModule) return mod;
         var result = {};
         if (mod != null) {
-          for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+          for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
         }
-        result["default"] = mod;
+        __setModuleDefault(result, mod);
         return result;
       };
     var __importDefault =
@@ -408,6 +570,13 @@ var require_internal_path_helper = __commonJS({
         return mod && mod.__esModule ? mod : { default: mod };
       };
     Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.safeTrimTrailingSeparator =
+      exports2.normalizeSeparators =
+      exports2.hasRoot =
+      exports2.hasAbsoluteRoot =
+      exports2.ensureAbsoluteRoot =
+      exports2.dirname =
+        void 0;
     var path2 = __importStar(require("path"));
     var assert_1 = __importDefault(require("assert"));
     var IS_WINDOWS = process.platform === "win32";
@@ -518,6 +687,7 @@ var require_internal_match_kind = __commonJS({
   "node_modules/@actions/glob/lib/internal-match-kind.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.MatchKind = void 0;
     var MatchKind;
     (function (MatchKind2) {
       MatchKind2[(MatchKind2["None"] = 0)] = "None";
@@ -532,18 +702,44 @@ var require_internal_match_kind = __commonJS({
 var require_internal_pattern_helper = __commonJS({
   "node_modules/@actions/glob/lib/internal-pattern-helper.js"(exports2) {
     "use strict";
+    var __createBinding =
+      (exports2 && exports2.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            Object.defineProperty(o, k2, {
+              enumerable: true,
+              get: function () {
+                return m[k];
+              }
+            });
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            o[k2] = m[k];
+          });
+    var __setModuleDefault =
+      (exports2 && exports2.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, "default", { enumerable: true, value: v });
+          }
+        : function (o, v) {
+            o["default"] = v;
+          });
     var __importStar =
       (exports2 && exports2.__importStar) ||
       function (mod) {
         if (mod && mod.__esModule) return mod;
         var result = {};
         if (mod != null) {
-          for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+          for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
         }
-        result["default"] = mod;
+        __setModuleDefault(result, mod);
         return result;
       };
     Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.partialMatch = exports2.match = exports2.getSearchPaths = void 0;
     var pathHelper = __importStar(require_internal_path_helper());
     var internal_match_kind_1 = require_internal_match_kind();
     var IS_WINDOWS = process.platform === "win32";
@@ -1384,15 +1580,40 @@ var require_minimatch = __commonJS({
 var require_internal_path = __commonJS({
   "node_modules/@actions/glob/lib/internal-path.js"(exports2) {
     "use strict";
+    var __createBinding =
+      (exports2 && exports2.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            Object.defineProperty(o, k2, {
+              enumerable: true,
+              get: function () {
+                return m[k];
+              }
+            });
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            o[k2] = m[k];
+          });
+    var __setModuleDefault =
+      (exports2 && exports2.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, "default", { enumerable: true, value: v });
+          }
+        : function (o, v) {
+            o["default"] = v;
+          });
     var __importStar =
       (exports2 && exports2.__importStar) ||
       function (mod) {
         if (mod && mod.__esModule) return mod;
         var result = {};
         if (mod != null) {
-          for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+          for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
         }
-        result["default"] = mod;
+        __setModuleDefault(result, mod);
         return result;
       };
     var __importDefault =
@@ -1401,6 +1622,7 @@ var require_internal_path = __commonJS({
         return mod && mod.__esModule ? mod : { default: mod };
       };
     Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.Path = void 0;
     var path2 = __importStar(require("path"));
     var pathHelper = __importStar(require_internal_path_helper());
     var assert_1 = __importDefault(require("assert"));
@@ -1469,15 +1691,40 @@ var require_internal_path = __commonJS({
 var require_internal_pattern = __commonJS({
   "node_modules/@actions/glob/lib/internal-pattern.js"(exports2) {
     "use strict";
+    var __createBinding =
+      (exports2 && exports2.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            Object.defineProperty(o, k2, {
+              enumerable: true,
+              get: function () {
+                return m[k];
+              }
+            });
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            o[k2] = m[k];
+          });
+    var __setModuleDefault =
+      (exports2 && exports2.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, "default", { enumerable: true, value: v });
+          }
+        : function (o, v) {
+            o["default"] = v;
+          });
     var __importStar =
       (exports2 && exports2.__importStar) ||
       function (mod) {
         if (mod && mod.__esModule) return mod;
         var result = {};
         if (mod != null) {
-          for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+          for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
         }
-        result["default"] = mod;
+        __setModuleDefault(result, mod);
         return result;
       };
     var __importDefault =
@@ -1486,6 +1733,7 @@ var require_internal_pattern = __commonJS({
         return mod && mod.__esModule ? mod : { default: mod };
       };
     Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.Pattern = void 0;
     var os = __importStar(require("os"));
     var path2 = __importStar(require("path"));
     var pathHelper = __importStar(require_internal_path_helper());
@@ -1495,7 +1743,7 @@ var require_internal_pattern = __commonJS({
     var internal_path_1 = require_internal_path();
     var IS_WINDOWS = process.platform === "win32";
     var Pattern = class {
-      constructor(patternOrNegate, segments, homedir) {
+      constructor(patternOrNegate, isImplicitPattern = false, segments, homedir) {
         this.negate = false;
         let pattern;
         if (typeof patternOrNegate === "string") {
@@ -1527,6 +1775,7 @@ var require_internal_pattern = __commonJS({
           .filter((x) => !foundGlob && !(foundGlob = x === ""));
         this.searchPath = new internal_path_1.Path(searchSegments).toString();
         this.rootRegExp = new RegExp(Pattern.regExpEscape(searchSegments[0]), IS_WINDOWS ? "i" : "");
+        this.isImplicitPattern = isImplicitPattern;
         const minimatchOptions = {
           dot: true,
           nobrace: true,
@@ -1541,7 +1790,7 @@ var require_internal_pattern = __commonJS({
       match(itemPath) {
         if (this.segments[this.segments.length - 1] === "**") {
           itemPath = pathHelper.normalizeSeparators(itemPath);
-          if (!itemPath.endsWith(path2.sep)) {
+          if (!itemPath.endsWith(path2.sep) && this.isImplicitPattern === false) {
             itemPath = `${itemPath}${path2.sep}`;
           }
         } else {
@@ -1658,6 +1907,7 @@ var require_internal_search_state = __commonJS({
   "node_modules/@actions/glob/lib/internal-search-state.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.SearchState = void 0;
     var SearchState = class {
       constructor(path2, level) {
         this.path = path2;
@@ -1672,6 +1922,42 @@ var require_internal_search_state = __commonJS({
 var require_internal_globber = __commonJS({
   "node_modules/@actions/glob/lib/internal-globber.js"(exports2) {
     "use strict";
+    var __createBinding =
+      (exports2 && exports2.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            Object.defineProperty(o, k2, {
+              enumerable: true,
+              get: function () {
+                return m[k];
+              }
+            });
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            o[k2] = m[k];
+          });
+    var __setModuleDefault =
+      (exports2 && exports2.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, "default", { enumerable: true, value: v });
+          }
+        : function (o, v) {
+            o["default"] = v;
+          });
+    var __importStar =
+      (exports2 && exports2.__importStar) ||
+      function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) {
+          for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+        }
+        __setModuleDefault(result, mod);
+        return result;
+      };
     var __awaiter =
       (exports2 && exports2.__awaiter) ||
       function (thisArg, _arguments, P, generator) {
@@ -1785,18 +2071,8 @@ var require_internal_globber = __commonJS({
           if ((f(v), q.shift(), q.length)) resume(q[0][0], q[0][1]);
         }
       };
-    var __importStar =
-      (exports2 && exports2.__importStar) ||
-      function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) {
-          for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-        }
-        result["default"] = mod;
-        return result;
-      };
     Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.DefaultGlobber = void 0;
     var core = __importStar(require_core());
     var fs = __importStar(require("fs"));
     var globOptionsHelper = __importStar(require_internal_glob_options_helper());
@@ -1846,7 +2122,7 @@ var require_internal_globber = __commonJS({
               options.implicitDescendants &&
               (pattern.trailingSeparator || pattern.segments[pattern.segments.length - 1] !== "**")
             ) {
-              patterns.push(new internal_pattern_1.Pattern(pattern.negate, pattern.segments.concat("**")));
+              patterns.push(new internal_pattern_1.Pattern(pattern.negate, true, pattern.segments.concat("**")));
             }
           }
           const stack = [];
@@ -1986,6 +2262,7 @@ var require_glob = __commonJS({
         });
       };
     Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.create = void 0;
     var internal_globber_1 = require_internal_globber();
     function create2(patterns, options) {
       return __awaiter(this, void 0, void 0, function* () {
