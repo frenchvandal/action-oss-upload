@@ -40,7 +40,9 @@ function objectify(
     let index = 0;
     let percent = 0;
 
-    const uploadDir: Globber = await create(`${homeDir}**${processSlash}*.*`);
+    const uploadDir: Globber = await create(homeDir, {
+      matchDirectories: false,
+    });
     const localFiles: AsyncGenerator<string, void, unknown> =
       uploadDir.globGenerator();
     const size: number = (await uploadDir.glob()).length;

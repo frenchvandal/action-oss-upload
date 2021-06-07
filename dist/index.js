@@ -325,6 +325,7 @@ var require_core = __commonJS({
       exports2.setCommandEcho =
       exports2.setOutput =
       exports2.getBooleanInput =
+      exports2.getMultilineInput =
       exports2.getInput =
       exports2.addPath =
       exports2.setSecret =
@@ -379,6 +380,13 @@ var require_core = __commonJS({
       return val.trim();
     }
     exports2.getInput = getInput2;
+    function getMultilineInput(name, options) {
+      const inputs = getInput2(name, options)
+        .split("\n")
+        .filter((x) => x !== "");
+      return inputs;
+    }
+    exports2.getMultilineInput = getMultilineInput;
     function getBooleanInput(name, options) {
       const trueValue = ["true", "True", "TRUE"];
       const falseValue = ["false", "False", "FALSE"];
@@ -502,6 +510,7 @@ var require_internal_glob_options_helper = __commonJS({
       const result = {
         followSymbolicLinks: true,
         implicitDescendants: true,
+        matchDirectories: true,
         omitBrokenSymbolicLinks: true
       };
       if (copy3) {
@@ -512,6 +521,10 @@ var require_internal_glob_options_helper = __commonJS({
         if (typeof copy3.implicitDescendants === "boolean") {
           result.implicitDescendants = copy3.implicitDescendants;
           core.debug(`implicitDescendants '${result.implicitDescendants}'`);
+        }
+        if (typeof copy3.matchDirectories === "boolean") {
+          result.matchDirectories = copy3.matchDirectories;
+          core.debug(`matchDirectories '${result.matchDirectories}'`);
         }
         if (typeof copy3.omitBrokenSymbolicLinks === "boolean") {
           result.omitBrokenSymbolicLinks = copy3.omitBrokenSymbolicLinks;
@@ -2151,7 +2164,7 @@ var require_internal_globber = __commonJS({
               continue;
             }
             if (stats.isDirectory()) {
-              if (match & internal_match_kind_1.MatchKind.Directory) {
+              if (match & internal_match_kind_1.MatchKind.Directory && options.matchDirectories) {
                 yield yield __await(item.path);
               } else if (!partialMatch) {
                 continue;
@@ -2226,6 +2239,169 @@ var require_internal_globber = __commonJS({
   }
 });
 
+// node_modules/@actions/glob/lib/internal-hash-files.js
+var require_internal_hash_files = __commonJS({
+  "node_modules/@actions/glob/lib/internal-hash-files.js"(exports2) {
+    "use strict";
+    var __createBinding =
+      (exports2 && exports2.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            Object.defineProperty(o, k2, {
+              enumerable: true,
+              get: function () {
+                return m[k];
+              }
+            });
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k;
+            o[k2] = m[k];
+          });
+    var __setModuleDefault =
+      (exports2 && exports2.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, "default", { enumerable: true, value: v });
+          }
+        : function (o, v) {
+            o["default"] = v;
+          });
+    var __importStar =
+      (exports2 && exports2.__importStar) ||
+      function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) {
+          for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+        }
+        __setModuleDefault(result, mod);
+        return result;
+      };
+    var __awaiter =
+      (exports2 && exports2.__awaiter) ||
+      function (thisArg, _arguments, P, generator) {
+        function adopt(value) {
+          return value instanceof P
+            ? value
+            : new P(function (resolve) {
+                resolve(value);
+              });
+        }
+        return new (P || (P = Promise))(function (resolve, reject) {
+          function fulfilled(value) {
+            try {
+              step(generator.next(value));
+            } catch (e) {
+              reject(e);
+            }
+          }
+          function rejected(value) {
+            try {
+              step(generator["throw"](value));
+            } catch (e) {
+              reject(e);
+            }
+          }
+          function step(result) {
+            result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+          }
+          step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+      };
+    var __asyncValues =
+      (exports2 && exports2.__asyncValues) ||
+      function (o) {
+        if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+        var m = o[Symbol.asyncIterator],
+          i;
+        return m
+          ? m.call(o)
+          : ((o = typeof __values === "function" ? __values(o) : o[Symbol.iterator]()),
+            (i = {}),
+            verb("next"),
+            verb("throw"),
+            verb("return"),
+            (i[Symbol.asyncIterator] = function () {
+              return this;
+            }),
+            i);
+        function verb(n) {
+          i[n] =
+            o[n] &&
+            function (v) {
+              return new Promise(function (resolve, reject) {
+                (v = o[n](v)), settle(resolve, reject, v.done, v.value);
+              });
+            };
+        }
+        function settle(resolve, reject, d, v) {
+          Promise.resolve(v).then(function (v2) {
+            resolve({ value: v2, done: d });
+          }, reject);
+        }
+      };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.hashFiles = void 0;
+    var crypto2 = __importStar(require("crypto"));
+    var core = __importStar(require_core());
+    var fs = __importStar(require("fs"));
+    var stream = __importStar(require("stream"));
+    var util = __importStar(require("util"));
+    var path2 = __importStar(require("path"));
+    function hashFiles(globber) {
+      var e_1, _a;
+      var _b;
+      return __awaiter(this, void 0, void 0, function* () {
+        let hasMatch = false;
+        const githubWorkspace = (_b = process.env["GITHUB_WORKSPACE"]) !== null && _b !== void 0 ? _b : process.cwd();
+        const result = crypto2.createHash("sha256");
+        let count = 0;
+        try {
+          for (var _c = __asyncValues(globber.globGenerator()), _d; (_d = yield _c.next()), !_d.done; ) {
+            const file = _d.value;
+            core.debug(file);
+            if (!file.startsWith(`${githubWorkspace}${path2.sep}`)) {
+              core.debug(`Ignore '${file}' since it is not under GITHUB_WORKSPACE.`);
+              continue;
+            }
+            if (fs.statSync(file).isDirectory()) {
+              core.debug(`Skip directory '${file}'.`);
+              continue;
+            }
+            const hash = crypto2.createHash("sha256");
+            const pipeline = util.promisify(stream.pipeline);
+            yield pipeline(fs.createReadStream(file), hash);
+            result.write(hash.digest());
+            count++;
+            if (!hasMatch) {
+              hasMatch = true;
+            }
+          }
+        } catch (e_1_1) {
+          e_1 = { error: e_1_1 };
+        } finally {
+          try {
+            if (_d && !_d.done && (_a = _c.return)) yield _a.call(_c);
+          } finally {
+            if (e_1) throw e_1.error;
+          }
+        }
+        result.end();
+        if (hasMatch) {
+          core.debug(`Found ${count} files to hash.`);
+          return result.digest("hex");
+        } else {
+          core.debug(`No matches found for glob`);
+          return "";
+        }
+      });
+    }
+    exports2.hashFiles = hashFiles;
+  }
+});
+
 // node_modules/@actions/glob/lib/glob.js
 var require_glob = __commonJS({
   "node_modules/@actions/glob/lib/glob.js"(exports2) {
@@ -2262,14 +2438,26 @@ var require_glob = __commonJS({
         });
       };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.create = void 0;
+    exports2.hashFiles = exports2.create = void 0;
     var internal_globber_1 = require_internal_globber();
+    var internal_hash_files_1 = require_internal_hash_files();
     function create2(patterns, options) {
       return __awaiter(this, void 0, void 0, function* () {
         return yield internal_globber_1.DefaultGlobber.create(patterns, options);
       });
     }
     exports2.create = create2;
+    function hashFiles(patterns, options) {
+      return __awaiter(this, void 0, void 0, function* () {
+        let followSymbolicLinks = true;
+        if (options && typeof options.followSymbolicLinks === "boolean") {
+          followSymbolicLinks = options.followSymbolicLinks;
+        }
+        const globber = yield create2(patterns, { followSymbolicLinks });
+        return internal_hash_files_1.hashFiles(globber);
+      });
+    }
+    exports2.hashFiles = hashFiles;
   }
 });
 
@@ -54622,7 +54810,7 @@ var require_package3 = __commonJS({
   "node_modules/urllib/package.json"(exports2, module2) {
     module2.exports = {
       name: "urllib",
-      version: "2.37.1",
+      version: "2.37.2",
       description:
         "Help in opening URLs (mostly HTTP) in a complex world \u2014 basic and digest authentication, redirections, cookies and more.",
       keywords: ["urllib", "http", "urlopen", "curl", "wget", "request", "https"],
@@ -55086,31 +55274,13 @@ var require_urllib = __commonJS({
           statusMessage = res.statusMessage;
           headers = res.headers;
         }
-        if (statusCode === 401 && headers["www-authenticate"] && !options.headers.authorization && args.digestAuth) {
-          var authenticate = headers["www-authenticate"];
-          if (authenticate.indexOf("Digest ") >= 0) {
-            debug2("Request#%d %s: got digest auth header WWW-Authenticate: %s", reqId, url, authenticate);
-            options.headers.authorization = digestAuthHeader(
-              options.method,
-              options.path,
-              authenticate,
-              args.digestAuth
-            );
-            debug2("Request#%d %s: auth with digest header: %s", reqId, url, options.headers.authorization);
-            if (res.headers["set-cookie"]) {
-              options.headers.cookie = res.headers["set-cookie"].join(";");
-            }
-            args.headers = options.headers;
-            return exports2.requestWithCallback(url, args, cb);
-          }
+        if (handleDigestAuth(res, cb)) {
+          return;
         }
-        var requestUseTime = Date.now() - requestStartTime;
-        if (timing) {
-          timing.contentDownload = requestUseTime;
-        }
+        var response = createCallbackResponse(data, res);
         debug2(
           "[%sms] done, %s bytes HTTP %s %s %s %s, keepAliveSocket: %s, timing: %j, socketHandledRequests: %s, socketHandledResponses: %s",
-          requestUseTime,
+          response.requestUseTime,
           responseSize,
           statusCode,
           options.method,
@@ -55121,23 +55291,6 @@ var require_urllib = __commonJS({
           socketHandledRequests,
           socketHandledResponses
         );
-        var response = {
-          status: statusCode,
-          statusCode,
-          statusMessage,
-          headers,
-          size: responseSize,
-          aborted: responseAborted,
-          rt: requestUseTime,
-          keepAliveSocket,
-          data,
-          requestUrls: args.requestUrls,
-          timing,
-          remoteAddress,
-          remotePort,
-          socketHandledRequests,
-          socketHandledResponses
-        };
         if (err2) {
           var agentStatus = "";
           if (agent && typeof agent.getCurrentStatus === "function") {
@@ -55195,6 +55348,40 @@ var require_urllib = __commonJS({
           }
         }
         cb(err2, data, args.streaming ? res : response);
+        emitResponseEvent(err2, response);
+      }
+      function createAndEmitResponseEvent(data, res) {
+        var response = createCallbackResponse(data, res);
+        emitResponseEvent(null, response);
+      }
+      function createCallbackResponse(data, res) {
+        var requestUseTime = Date.now() - requestStartTime;
+        if (timing) {
+          timing.contentDownload = requestUseTime;
+        }
+        var headers = {};
+        if (res && res.headers) {
+          headers = res.headers;
+        }
+        return {
+          status: statusCode,
+          statusCode,
+          statusMessage,
+          headers,
+          size: responseSize,
+          aborted: responseAborted,
+          rt: requestUseTime,
+          keepAliveSocket,
+          data,
+          requestUrls: args.requestUrls,
+          timing,
+          remoteAddress,
+          remotePort,
+          socketHandledRequests,
+          socketHandledResponses
+        };
+      }
+      function emitResponseEvent(err2, response) {
         if (args.emitter) {
           reqMeta.url = parsedUrl.href;
           reqMeta.socket = req && req.connection;
@@ -55208,6 +55395,32 @@ var require_urllib = __commonJS({
             res: response
           });
         }
+      }
+      function handleDigestAuth(res, cb) {
+        var headers = {};
+        if (res && res.headers) {
+          headers = res.headers;
+        }
+        if (statusCode === 401 && headers["www-authenticate"] && !options.headers.authorization && args.digestAuth) {
+          var authenticate = headers["www-authenticate"];
+          if (authenticate.indexOf("Digest ") >= 0) {
+            debug2("Request#%d %s: got digest auth header WWW-Authenticate: %s", reqId, url, authenticate);
+            options.headers.authorization = digestAuthHeader(
+              options.method,
+              options.path,
+              authenticate,
+              args.digestAuth
+            );
+            debug2("Request#%d %s: auth with digest header: %s", reqId, url, options.headers.authorization);
+            if (res.headers["set-cookie"]) {
+              options.headers.cookie = res.headers["set-cookie"].join(";");
+            }
+            args.headers = options.headers;
+            exports2.requestWithCallback(url, args, cb);
+            return true;
+          }
+        }
+        return false;
       }
       function handleRedirect(res) {
         var err2 = null;
@@ -55305,6 +55518,7 @@ var require_urllib = __commonJS({
           var result = handleRedirect(res);
           if (result.redirect) {
             res.resume();
+            createAndEmitResponseEvent(null, res);
             return;
           }
           if (result.error) {
@@ -55331,6 +55545,7 @@ var require_urllib = __commonJS({
           var result = handleRedirect(res);
           if (result.redirect) {
             res.resume();
+            createAndEmitResponseEvent(null, res);
             return;
           }
           if (result.error) {
@@ -55412,6 +55627,7 @@ var require_urllib = __commonJS({
             return done(result2.error, body2, res);
           }
           if (result2.redirect) {
+            createAndEmitResponseEvent(null, res);
             return;
           }
           decodeContent(res, body2, function (err2, data, encoding) {
@@ -62425,7 +62641,9 @@ function objectify(filePath, baseName, prefix) {
   try {
     let index = 0;
     let percent = 0;
-    const uploadDir = await (0, import_glob.create)(`${homeDir}**${processSlash}*.*`);
+    const uploadDir = await (0, import_glob.create)(homeDir, {
+      matchDirectories: false
+    });
     const localFiles = uploadDir.globGenerator();
     const size = (await uploadDir.glob()).length;
     (0, import_core.info)(`${size} files to upload`);
