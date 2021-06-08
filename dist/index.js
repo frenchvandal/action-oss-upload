@@ -31,6 +31,7 @@ var __commonJS = (cb, mod) =>
     return mod || (0, cb[Object.keys(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
 var __export = (target, all) => {
+  __markAsModule(target);
   for (var name in all) __defProp(target, name, { get: all[name], enumerable: true });
 };
 var __reExport = (target, module2, desc) => {
@@ -62655,9 +62656,9 @@ function objectify(filePath, baseName, prefix) {
       (0, import_core.info)(`[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);
     }
     (0, import_core.info)(`${index} files uploaded`);
-  } catch (error) {
+  } catch (err) {
     const { warning } = await Promise.resolve().then(() => __toModule(require_core()));
-    warning(error.message);
+    warning(err.message);
   }
 })();
 /*!

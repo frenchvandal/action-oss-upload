@@ -63,8 +63,8 @@ function objectify(
     }
 
     info(`${index} files uploaded`);
-  } catch (error) {
+  } catch (err: any) {
     const { warning } = await import('@actions/core');
-    warning(error.message);
+    warning(err.message);
   }
 })();
