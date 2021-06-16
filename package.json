@@ -3,7 +3,7 @@
   "description": "This GitHub Action uploads generated files to an OSS bucket",
   "main": "dist/index.js",
   "engines": {
-    "node": ">=16.3.0",
+    "node": ">=16.2.0",
     "npm": ">=7.13.0"
   },
   "scripts": {
@@ -47,9 +47,9 @@
     "@types/node": "^15.12.2",
     "@types/prettier": "^2.3.0",
     "@types/standard-version": "^7.0.0",
-    "@typescript-eslint/eslint-plugin": "^4.26.1",
-    "@typescript-eslint/parser": "^4.26.1",
-    "esbuild": "^0.12.8",
+    "@typescript-eslint/eslint-plugin": "^4.27.0",
+    "@typescript-eslint/parser": "^4.27.0",
+    "esbuild": "^0.12.9",
     "eslint": "^7.28.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^3.4.0",
