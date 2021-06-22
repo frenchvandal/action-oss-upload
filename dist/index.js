@@ -37518,16 +37518,16 @@ var require_agent4 = __commonJS({
         port = 1080;
       }
       if (opts.protocol) {
-        switch (opts.protocol) {
-          case "socks4:":
+        switch (opts.protocol.replace(":", "")) {
+          case "socks4":
             lookup = true;
-          case "socks4a:":
+          case "socks4a":
             type2 = 4;
             break;
-          case "socks5:":
+          case "socks5":
             lookup = true;
-          case "socks:":
-          case "socks5h:":
+          case "socks":
+          case "socks5h":
             type2 = 5;
             break;
           default:
@@ -37546,7 +37546,7 @@ var require_agent4 = __commonJS({
         port,
         type: type2
       };
-      let userId = opts.userId;
+      let userId = opts.userId || opts.username;
       let password = opts.password;
       if (opts.auth) {
         const auth = opts.auth.split(":");
@@ -37586,7 +37586,7 @@ var require_agent4 = __commonJS({
       callback(req, opts) {
         return __awaiter(this, void 0, void 0, function* () {
           const { lookup, proxy } = this;
-          let { host, port } = opts;
+          let { host, port, timeout } = opts;
           if (!host) {
             throw new Error("No `host` defined!");
           }
@@ -37596,17 +37596,15 @@ var require_agent4 = __commonJS({
           const socksOpts = {
             proxy,
             destination: { host, port },
-            command: "connect"
+            command: "connect",
+            timeout
           };
           debug2("Creating socks proxy connection: %o", socksOpts);
           const { socket } = yield socks_1.SocksClient.createConnection(socksOpts);
           debug2("Successfully created socks proxy connection");
           if (opts.secureEndpoint) {
-            const servername = opts.servername || opts.host;
-            if (!servername) {
-              throw new Error('Could not determine "servername"');
-            }
             debug2("Upgrading socket connection to TLS");
+            const servername = opts.servername || host;
             return tls_1.default.connect(
               Object.assign(Object.assign({}, omit(opts, "host", "hostname", "path", "port")), {
                 socket,
