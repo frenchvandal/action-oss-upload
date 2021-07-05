@@ -19440,6 +19440,8 @@ var require_common = __commonJS({
       function createDebug(namespace) {
         let prevTime;
         let enableOverride = null;
+        let namespacesCache;
+        let enabledCache;
         function debug2(...args) {
           if (!debug2.enabled) {
             return;
@@ -19482,7 +19484,16 @@ var require_common = __commonJS({
         Object.defineProperty(debug2, "enabled", {
           enumerable: true,
           configurable: false,
-          get: () => (enableOverride === null ? createDebug.enabled(namespace) : enableOverride),
+          get: () => {
+            if (enableOverride !== null) {
+              return enableOverride;
+            }
+            if (namespacesCache !== createDebug.namespaces) {
+              namespacesCache = createDebug.namespaces;
+              enabledCache = createDebug.enabled(namespace);
+            }
+            return enabledCache;
+          },
           set: (v) => {
             enableOverride = v;
           }
@@ -19499,6 +19510,7 @@ var require_common = __commonJS({
       }
       function enable(namespaces) {
         createDebug.save(namespaces);
+        createDebug.namespaces = namespaces;
         createDebug.names = [];
         createDebug.skips = [];
         let i;
@@ -54815,7 +54827,7 @@ var require_package3 = __commonJS({
   "node_modules/urllib/package.json"(exports2, module2) {
     module2.exports = {
       name: "urllib",
-      version: "2.37.2",
+      version: "2.37.3",
       description:
         "Help in opening URLs (mostly HTTP) in a complex world \u2014 basic and digest authentication, redirections, cookies and more.",
       keywords: ["urllib", "http", "urlopen", "curl", "wget", "request", "https"],
@@ -55364,14 +55376,13 @@ var require_urllib = __commonJS({
         if (timing) {
           timing.contentDownload = requestUseTime;
         }
-        var headers = {};
-        if (res && res.headers) {
-          headers = res.headers;
-        }
+        var headers = (res && res.headers) || {};
+        var resStatusCode = (res && res.statusCode) || statusCode;
+        var resStatusMessage = (res && res.statusMessage) || statusMessage;
         return {
-          status: statusCode,
-          statusCode,
-          statusMessage,
+          status: resStatusCode,
+          statusCode: resStatusCode,
+          statusMessage: resStatusMessage,
           headers,
           size: responseSize,
           aborted: responseAborted,
