@@ -3038,7 +3038,7 @@ var require_Utility = __commonJS({
         getValue,
         isArray2,
         isEmpty,
-        isFunction,
+        isFunction2,
         isObject4,
         isPlainObject,
         slice = [].slice,
@@ -3046,7 +3046,7 @@ var require_Utility = __commonJS({
       assign = function () {
         var i, key, len, source, sources, target;
         (target = arguments[0]), (sources = 2 <= arguments.length ? slice.call(arguments, 1) : []);
-        if (isFunction(Object.assign)) {
+        if (isFunction2(Object.assign)) {
           Object.assign.apply(null, arguments);
         } else {
           for (i = 0, len = sources.length; i < len; i++) {
@@ -3061,7 +3061,7 @@ var require_Utility = __commonJS({
         }
         return target;
       };
-      isFunction = function (val) {
+      isFunction2 = function (val) {
         return !!val && Object.prototype.toString.call(val) === "[object Function]";
       };
       isObject4 = function (val) {
@@ -3069,7 +3069,7 @@ var require_Utility = __commonJS({
         return !!val && ((ref = typeof val) === "function" || ref === "object");
       };
       isArray2 = function (val) {
-        if (isFunction(Array.isArray)) {
+        if (isFunction2(Array.isArray)) {
           return Array.isArray(val);
         } else {
           return Object.prototype.toString.call(val) === "[object Array]";
@@ -3099,14 +3099,14 @@ var require_Utility = __commonJS({
         );
       };
       getValue = function (obj) {
-        if (isFunction(obj.valueOf)) {
+        if (isFunction2(obj.valueOf)) {
           return obj.valueOf();
         } else {
           return obj;
         }
       };
       module2.exports.assign = assign;
-      module2.exports.isFunction = isFunction;
+      module2.exports.isFunction = isFunction2;
       module2.exports.isObject = isObject4;
       module2.exports.isArray = isArray2;
       module2.exports.isEmpty = isEmpty;
@@ -3428,7 +3428,7 @@ var require_XMLElement = __commonJS({
         XMLNamedNodeMap,
         XMLNode,
         getValue,
-        isFunction,
+        isFunction2,
         isObject4,
         ref,
         extend = function (child, parent) {
@@ -3444,7 +3444,7 @@ var require_XMLElement = __commonJS({
           return child;
         },
         hasProp = {}.hasOwnProperty;
-      (ref = require_Utility()), (isObject4 = ref.isObject), (isFunction = ref.isFunction), (getValue = ref.getValue);
+      (ref = require_Utility()), (isObject4 = ref.isObject), (isFunction2 = ref.isFunction), (getValue = ref.getValue);
       XMLNode = require_XMLNode();
       NodeType = require_NodeType();
       XMLAttribute = require_XMLAttribute();
@@ -3557,7 +3557,7 @@ var require_XMLElement = __commonJS({
               this.attribute(attName, attValue);
             }
           } else {
-            if (isFunction(value)) {
+            if (isFunction2(value)) {
               value = value.apply();
             }
             if (this.options.keepNullAttributes && value == null) {
@@ -4671,13 +4671,13 @@ var require_XMLNode = __commonJS({
         XMLText,
         getValue,
         isEmpty,
-        isFunction,
+        isFunction2,
         isObject4,
         ref1,
         hasProp = {}.hasOwnProperty;
       (ref1 = require_Utility()),
         (isObject4 = ref1.isObject),
-        (isFunction = ref1.isFunction),
+        (isFunction2 = ref1.isFunction),
         (isEmpty = ref1.isEmpty),
         (getValue = ref1.getValue);
       XMLElement = null;
@@ -4833,13 +4833,13 @@ var require_XMLNode = __commonJS({
               item = name[j];
               lastChild = this.element(item);
             }
-          } else if (isFunction(name)) {
+          } else if (isFunction2(name)) {
             lastChild = this.element(name.apply());
           } else if (isObject4(name)) {
             for (key in name) {
               if (!hasProp.call(name, key)) continue;
               val = name[key];
-              if (isFunction(val)) {
+              if (isFunction2(val)) {
                 val = val.apply();
               }
               if (
@@ -5049,7 +5049,7 @@ var require_XMLNode = __commonJS({
               this.instruction(insTarget, insValue);
             }
           } else {
-            if (isFunction(value)) {
+            if (isFunction2(value)) {
               value = value.apply();
             }
             instruction = new XMLProcessingInstruction(this, target, value);
@@ -6343,14 +6343,14 @@ var require_XMLDocumentCB = __commonJS({
         XMLStringifier,
         XMLText,
         getValue,
-        isFunction,
+        isFunction2,
         isObject4,
         isPlainObject,
         ref,
         hasProp = {}.hasOwnProperty;
       (ref = require_Utility()),
         (isObject4 = ref.isObject),
-        (isFunction = ref.isFunction),
+        (isFunction2 = ref.isFunction),
         (isPlainObject = ref.isPlainObject),
         (getValue = ref.getValue);
       NodeType = require_NodeType();
@@ -6475,7 +6475,7 @@ var require_XMLDocumentCB = __commonJS({
           if (this.currentNode && this.currentNode.type === NodeType.DocType) {
             this.dtdElement.apply(this, arguments);
           } else {
-            if (Array.isArray(name) || isObject4(name) || isFunction(name)) {
+            if (Array.isArray(name) || isObject4(name) || isFunction2(name)) {
               oldValidationFlag = this.options.noValidation;
               this.options.noValidation = true;
               root = new XMLDocument(this.options).element("TEMP_ROOT");
@@ -6512,7 +6512,7 @@ var require_XMLDocumentCB = __commonJS({
               this.attribute(attName, attValue);
             }
           } else {
-            if (isFunction(value)) {
+            if (isFunction2(value)) {
               value = value.apply();
             }
             if (this.options.keepNullAttributes && value == null) {
@@ -6572,7 +6572,7 @@ var require_XMLDocumentCB = __commonJS({
               this.instruction(insTarget, insValue);
             }
           } else {
-            if (isFunction(value)) {
+            if (isFunction2(value)) {
               value = value.apply();
             }
             node = new XMLProcessingInstruction(this, target, value);
@@ -7023,9 +7023,9 @@ var require_lib = __commonJS({
         XMLStreamWriter,
         XMLStringWriter,
         assign,
-        isFunction,
+        isFunction2,
         ref;
-      (ref = require_Utility()), (assign = ref.assign), (isFunction = ref.isFunction);
+      (ref = require_Utility()), (assign = ref.assign), (isFunction2 = ref.isFunction);
       XMLDOMImplementation = require_XMLDOMImplementation();
       XMLDocument = require_XMLDocument();
       XMLDocumentCB = require_XMLDocumentCB();
@@ -7051,7 +7051,7 @@ var require_lib = __commonJS({
       };
       module2.exports.begin = function (options, onData, onEnd) {
         var ref1;
-        if (isFunction(options)) {
+        if (isFunction2(options)) {
           (ref1 = [options, onData]), (onData = ref1[0]), (onEnd = ref1[1]);
           options = {};
         }
@@ -13463,8 +13463,8 @@ var require_object_inspect = __commonJS({
         throw new TypeError('option "maxStringLength", if provided, must be a positive integer, Infinity, or `null`');
       }
       var customInspect = has(opts, "customInspect") ? opts.customInspect : true;
-      if (typeof customInspect !== "boolean") {
-        throw new TypeError('option "customInspect", if provided, must be `true` or `false`');
+      if (typeof customInspect !== "boolean" && customInspect !== "symbol") {
+        throw new TypeError("option \"customInspect\", if provided, must be `true`, `false`, or `'symbol'`");
       }
       if (
         has(opts, "indent") &&
@@ -13571,7 +13571,7 @@ var require_object_inspect = __commonJS({
       if (typeof obj === "object" && customInspect) {
         if (inspectSymbol && typeof obj[inspectSymbol] === "function") {
           return obj[inspectSymbol]();
-        } else if (typeof obj.inspect === "function") {
+        } else if (customInspect !== "symbol" && typeof obj.inspect === "function") {
           return obj.inspect();
         }
       }
@@ -15221,12 +15221,13 @@ var require_semver = __commonJS({
     src[HYPHENRANGELOOSE] = "^\\s*(" + src[XRANGEPLAINLOOSE] + ")\\s+-\\s+(" + src[XRANGEPLAINLOOSE] + ")\\s*$";
     var STAR = R++;
     src[STAR] = "(<|>)?=?\\s*\\*";
-    for (var i = 0; i < R; i++) {
+    for (i = 0; i < R; i++) {
       debug2(i, src[i]);
       if (!re[i]) {
         re[i] = new RegExp(src[i]);
       }
     }
+    var i;
     exports2.parse = parse;
     function parse(version, options) {
       if (!options || typeof options !== "object") {
@@ -22531,10 +22532,10 @@ var require_util = __commonJS({
       return objectToString(e) === "[object Error]" || e instanceof Error;
     }
     exports2.isError = isError;
-    function isFunction(arg) {
+    function isFunction2(arg) {
       return typeof arg === "function";
     }
-    exports2.isFunction = isFunction;
+    exports2.isFunction = isFunction2;
     function isPrimitive(arg) {
       return (
         arg === null ||
@@ -27472,7 +27473,8 @@ var require_utf7 = __commonJS({
     }
     var base64Regex = /[A-Za-z0-9\/+]/;
     var base64Chars = [];
-    for (var i = 0; i < 256; i++) base64Chars[i] = base64Regex.test(String.fromCharCode(i));
+    for (i = 0; i < 256; i++) base64Chars[i] = base64Regex.test(String.fromCharCode(i));
+    var i;
     var plusChar = "+".charCodeAt(0);
     var minusChar = "-".charCodeAt(0);
     var andChar = "&".charCodeAt(0);
@@ -28399,7 +28401,8 @@ var require_dbcs_codec = __commonJS({
     var NODE_START = -1e3;
     var UNASSIGNED_NODE = new Array(256);
     var DEF_CHAR = -1;
-    for (var i = 0; i < 256; i++) UNASSIGNED_NODE[i] = UNASSIGNED;
+    for (i = 0; i < 256; i++) UNASSIGNED_NODE[i] = UNASSIGNED;
+    var i;
     function DBCSCodec(codecOptions, iconv) {
       this.encodingName = codecOptions.encodingName;
       if (!codecOptions) throw new Error("DBCS codec is called without the data.");
@@ -34927,12 +34930,13 @@ var require_encodings = __commonJS({
       require_dbcs_codec(),
       require_dbcs_data()
     ];
-    for (var i = 0; i < modules.length; i++) {
+    for (i = 0; i < modules.length; i++) {
       module2 = modules[i];
       for (enc in module2) if (Object.prototype.hasOwnProperty.call(module2, enc)) exports2[enc] = module2[enc];
     }
     var module2;
     var enc;
+    var i;
   }
 });
 
@@ -49933,7 +49937,7 @@ var require_types = __commonJS({
         return type2;
       }
       var isString = defBuiltInType("string", "truthy");
-      var isFunction = defBuiltInType("function", function () {});
+      var isFunction2 = defBuiltInType("function", function () {});
       var isArray2 = defBuiltInType("array", []);
       var isObject4 = defBuiltInType("object", {});
       var isRegExp = defBuiltInType("RegExp", /./);
@@ -49944,7 +49948,7 @@ var require_types = __commonJS({
       var isUndefined = defBuiltInType("undefined", void 0);
       var builtInTypes = {
         string: isString,
-        function: isFunction,
+        function: isFunction2,
         array: isArray2,
         object: isObject4,
         RegExp: isRegExp,
@@ -50190,7 +50194,7 @@ var require_types = __commonJS({
         if (isUndefined.check(func)) {
           delete nodePrototype[name];
         } else {
-          isFunction.assert(func);
+          isFunction2.assert(func);
           Object.defineProperty(nodePrototype, name, {
             enumerable: true,
             configurable: true,
@@ -51253,7 +51257,7 @@ var require_path_visitor = __commonJS({
       var NodePath = fork.use(node_path_1.default);
       var isArray2 = types.builtInTypes.array;
       var isObject4 = types.builtInTypes.object;
-      var isFunction = types.builtInTypes.function;
+      var isFunction2 = types.builtInTypes.function;
       var undefined2;
       var PathVisitor = function PathVisitor2() {
         if (!(this instanceof PathVisitor2)) {
@@ -51281,7 +51285,7 @@ var require_path_visitor = __commonJS({
         for (var i = 0; i < typeNameCount; ++i) {
           var typeName = typeNameKeys[i];
           methodName = "visit" + supertypeTable[typeName];
-          if (isFunction.check(visitor[methodName])) {
+          if (isFunction2.check(visitor[methodName])) {
             methodNameTable[typeName] = methodName;
           }
         }
@@ -51304,8 +51308,8 @@ var require_path_visitor = __commonJS({
         Vp.constructor = Visitor;
         extend(Vp, methods);
         extend(Visitor, PathVisitor);
-        isFunction.assert(Visitor.fromMethodsObject);
-        isFunction.assert(Visitor.visit);
+        isFunction2.assert(Visitor.fromMethodsObject);
+        isFunction2.assert(Visitor.visit);
         return new Visitor();
       };
       function extend(target, source) {
@@ -56145,7 +56149,7 @@ var require_package4 = __commonJS({
   "node_modules/ali-oss/package.json"(exports2, module2) {
     module2.exports = {
       name: "ali-oss",
-      version: "6.15.2",
+      version: "6.16.0",
       description: "aliyun oss(object storage service) node client",
       main: "lib/client.js",
       files: ["lib", "shims", "dist"],
@@ -56162,9 +56166,9 @@ var require_package4 = __commonJS({
       },
       scripts: {
         "build-change-log": "standard-version",
-        test: "mocha -t 60000 -r thunk-mocha -r should -r dotenv/config test/node/*.test.js test/node/**/*.test.js",
+        test: "npm run tsc && mocha -t 60000 -r thunk-mocha -r should -r dotenv/config test/node/*.test.js test/node/**/*.test.js",
         "test-cov":
-          "nyc --reporter=lcov node_modules/.bin/_mocha -t 60000 -r thunk-mocha -r should test/node/*.test.js test/node/**/*.test.js",
+          "npm run tsc && nyc --reporter=lcov node_modules/.bin/_mocha -t 60000 -r thunk-mocha -r should test/node/*.test.js test/node/**/*.test.js",
         jshint: "jshint .",
         autod: "autod",
         "build-test":
@@ -56247,7 +56251,7 @@ var require_package4 = __commonJS({
         request: "^2.88.0",
         should: "^11.0.0",
         sinon: "^1.17.7",
-        snyk: "^1.520.0",
+        snyk: "1.454.0",
         "standard-version": "^8.0.1",
         "stream-equal": "^1.1.0",
         "thunk-mocha": "^1.0.3",
@@ -57195,9 +57199,9 @@ var require_initOptions = __commonJS({
       if (!options || !options.accessKeyId || !options.accessKeySecret) {
         throw new Error("require accessKeyId, accessKeySecret");
       }
-      if (options.stsToken && !options.refreshSTSToken) {
+      if (options.stsToken && !options.refreshSTSToken && !options.refreshSTSTokenInterval) {
         console.warn(
-          "It's recommended to set `refreshSTSToken` to refresh stsToken\u3001accessKeyId\u3001accessKeySecret automatically when sts info expires"
+          "It's recommended to set 'refreshSTSToken' and 'refreshSTSTokenInterval' to refresh stsToken\u3001accessKeyId\u3001accessKeySecret automatically when sts token has expired"
         );
       }
       if (options.bucket) {
@@ -57216,6 +57220,7 @@ var require_initOptions = __commonJS({
           sldEnable: false,
           headerEncoding: "utf-8",
           refreshSTSToken: null,
+          refreshSTSTokenInterval: 6e4 * 5,
           retryMax: 0
         },
         options
@@ -57669,13 +57674,22 @@ __export(setSTSToken_exports, {
 });
 async function setSTSToken() {
   if (!this.options) this.options = {};
-  let credentials2 = await this.options.refreshSTSToken();
-  credentials2 = formatObjKey(credentials2, "firstLowerCase");
-  if (credentials2.securityToken) {
-    credentials2.stsToken = credentials2.securityToken;
+  const now = new Date();
+  if (this.stsTokenFreshTime) {
+    if (+now - this.stsTokenFreshTime >= this.options.refreshSTSTokenInterval) {
+      this.stsTokenFreshTime = now;
+      let credentials2 = await this.options.refreshSTSToken();
+      credentials2 = formatObjKey(credentials2, "firstLowerCase");
+      if (credentials2.securityToken) {
+        credentials2.stsToken = credentials2.securityToken;
+      }
+      checkCredentials(credentials2);
+      Object.assign(this.options, credentials2);
+    }
+  } else {
+    this.stsTokenFreshTime = now;
   }
-  checkCredentials(credentials2);
-  Object.assign(this.options, credentials2);
+  return null;
 }
 function checkCredentials(obj) {
   const stsTokenKey = ["accessKeySecret", "accessKeyId", "stsToken"];
@@ -57724,6 +57738,20 @@ function retry(func, retryMax, config = {}) {
 }
 var init_retry = __esm({
   "node_modules/ali-oss/lib/common/utils/retry.ts"() {}
+});
+
+// node_modules/ali-oss/lib/common/utils/isFunction.ts
+var isFunction_exports = {};
+__export(isFunction_exports, {
+  isFunction: () => isFunction
+});
+var isFunction;
+var init_isFunction = __esm({
+  "node_modules/ali-oss/lib/common/utils/isFunction.ts"() {
+    isFunction = (v) => {
+      return typeof v === "function";
+    };
+  }
 });
 
 // node_modules/ali-oss/lib/common/object/getSymlink.js
@@ -60814,6 +60842,7 @@ var require_managed_upload = __commonJS({
       return await this._resumeMultipart(checkpoint, options);
     };
     proto._resumeMultipart = async function _resumeMultipart(checkpoint, options) {
+      const that = this;
       if (this.isCancel()) {
         throw this._makeCancelEvent();
       }
@@ -60902,7 +60931,18 @@ var require_managed_upload = __commonJS({
           await uploadPartJob(this, todo[i]);
         }
       } else {
-        const jobErr = await this._parallelNode(todo, parallel, uploadPartJob);
+        const jobErr = await this._parallel(
+          todo,
+          parallel,
+          (value) =>
+            new Promise((resolve, reject) => {
+              uploadPartJob(that, value)
+                .then(() => {
+                  resolve();
+                })
+                .catch(reject);
+            })
+        );
         const abortEvent = jobErr.find((err) => err.name === "abort");
         if (abortEvent) throw abortEvent;
         if (this.isCancel()) {
@@ -62399,6 +62439,7 @@ var require_client = __commonJS({
     var { getReqUrl: getReqUrl3 } = (init_getReqUrl(), getReqUrl_exports);
     var { setSTSToken: setSTSToken2 } = (init_setSTSToken(), setSTSToken_exports);
     var { retry: retry2 } = (init_retry(), retry_exports);
+    var { isFunction: isFunction2 } = (init_isFunction(), isFunction_exports);
     var globalHttpAgent = new AgentKeepalive();
     var globalHttpsAgent = new HttpsAgentKeepalive();
     function Client(options, ctx) {
@@ -62474,6 +62515,9 @@ var require_client = __commonJS({
       }
     };
     async function request(params) {
+      if (this.options.stsToken && isFunction2(this.options.refreshSTSToken)) {
+        await setSTSToken2.call(this);
+      }
       const reqParams = createRequest2.call(this, params);
       let result;
       let reqErr;
@@ -62493,20 +62537,6 @@ var require_client = __commonJS({
       if (err) {
         if (params.customResponse && result && result.res) {
           await sendToWormhole(result.res);
-        }
-        if (
-          err.status === 403 &&
-          err.code === "InvalidAccessKeyId" &&
-          this.options.accessKeyId.startsWith("STS.") &&
-          typeof this.options.refreshSTSToken === "function"
-        ) {
-          if (!this._setOptions || Date.now() - this._setOptions > 1e4) {
-            this._setOptions = Date.now();
-            await setSTSToken2.call(this);
-            if (!params.stream) {
-              return this.request(params);
-            }
-          }
         }
         if (err.name === "ResponseTimeoutError") {
           err.message = `${err.message.split(",")[0]}, please increase the timeout or use multipartDownload.`;
