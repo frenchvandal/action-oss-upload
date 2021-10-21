@@ -23924,6 +23924,146 @@ var require_stream_duplex = __commonJS({
   }
 });
 
+// node_modules/ftp/node_modules/string_decoder/index.js
+var require_string_decoder = __commonJS({
+  "node_modules/ftp/node_modules/string_decoder/index.js"(exports2) {
+    var Buffer2 = require("buffer").Buffer;
+    var isBufferEncoding =
+      Buffer2.isEncoding ||
+      function (encoding) {
+        switch (encoding && encoding.toLowerCase()) {
+          case "hex":
+          case "utf8":
+          case "utf-8":
+          case "ascii":
+          case "binary":
+          case "base64":
+          case "ucs2":
+          case "ucs-2":
+          case "utf16le":
+          case "utf-16le":
+          case "raw":
+            return true;
+          default:
+            return false;
+        }
+      };
+    function assertEncoding(encoding) {
+      if (encoding && !isBufferEncoding(encoding)) {
+        throw new Error("Unknown encoding: " + encoding);
+      }
+    }
+    var StringDecoder = (exports2.StringDecoder = function (encoding) {
+      this.encoding = (encoding || "utf8").toLowerCase().replace(/[-_]/, "");
+      assertEncoding(encoding);
+      switch (this.encoding) {
+        case "utf8":
+          this.surrogateSize = 3;
+          break;
+        case "ucs2":
+        case "utf16le":
+          this.surrogateSize = 2;
+          this.detectIncompleteChar = utf16DetectIncompleteChar;
+          break;
+        case "base64":
+          this.surrogateSize = 3;
+          this.detectIncompleteChar = base64DetectIncompleteChar;
+          break;
+        default:
+          this.write = passThroughWrite;
+          return;
+      }
+      this.charBuffer = new Buffer2(6);
+      this.charReceived = 0;
+      this.charLength = 0;
+    });
+    StringDecoder.prototype.write = function (buffer) {
+      var charStr = "";
+      while (this.charLength) {
+        var available =
+          buffer.length >= this.charLength - this.charReceived ? this.charLength - this.charReceived : buffer.length;
+        buffer.copy(this.charBuffer, this.charReceived, 0, available);
+        this.charReceived += available;
+        if (this.charReceived < this.charLength) {
+          return "";
+        }
+        buffer = buffer.slice(available, buffer.length);
+        charStr = this.charBuffer.slice(0, this.charLength).toString(this.encoding);
+        var charCode = charStr.charCodeAt(charStr.length - 1);
+        if (charCode >= 55296 && charCode <= 56319) {
+          this.charLength += this.surrogateSize;
+          charStr = "";
+          continue;
+        }
+        this.charReceived = this.charLength = 0;
+        if (buffer.length === 0) {
+          return charStr;
+        }
+        break;
+      }
+      this.detectIncompleteChar(buffer);
+      var end = buffer.length;
+      if (this.charLength) {
+        buffer.copy(this.charBuffer, 0, buffer.length - this.charReceived, end);
+        end -= this.charReceived;
+      }
+      charStr += buffer.toString(this.encoding, 0, end);
+      var end = charStr.length - 1;
+      var charCode = charStr.charCodeAt(end);
+      if (charCode >= 55296 && charCode <= 56319) {
+        var size = this.surrogateSize;
+        this.charLength += size;
+        this.charReceived += size;
+        this.charBuffer.copy(this.charBuffer, size, 0, size);
+        buffer.copy(this.charBuffer, 0, 0, size);
+        return charStr.substring(0, end);
+      }
+      return charStr;
+    };
+    StringDecoder.prototype.detectIncompleteChar = function (buffer) {
+      var i = buffer.length >= 3 ? 3 : buffer.length;
+      for (; i > 0; i--) {
+        var c = buffer[buffer.length - i];
+        if (i == 1 && c >> 5 == 6) {
+          this.charLength = 2;
+          break;
+        }
+        if (i <= 2 && c >> 4 == 14) {
+          this.charLength = 3;
+          break;
+        }
+        if (i <= 3 && c >> 3 == 30) {
+          this.charLength = 4;
+          break;
+        }
+      }
+      this.charReceived = i;
+    };
+    StringDecoder.prototype.end = function (buffer) {
+      var res = "";
+      if (buffer && buffer.length) res = this.write(buffer);
+      if (this.charReceived) {
+        var cr = this.charReceived;
+        var buf = this.charBuffer;
+        var enc = this.encoding;
+        res += buf.slice(0, cr).toString(enc);
+      }
+      return res;
+    };
+    function passThroughWrite(buffer) {
+      return buffer.toString(this.encoding);
+    }
+    function utf16DetectIncompleteChar(buffer) {
+      this.charReceived = buffer.length % 2;
+      this.charLength = this.charReceived ? 2 : 0;
+    }
+    function base64DetectIncompleteChar(buffer) {
+      this.charReceived = buffer.length % 3;
+      this.charLength = this.charReceived ? 3 : 0;
+    }
+  }
+});
+
 // node_modules/ftp/node_modules/readable-stream/lib/_stream_readable.js
 var require_stream_readable = __commonJS({
   "node_modules/ftp/node_modules/readable-stream/lib/_stream_readable.js"(exports2, module2) {
@@ -23975,7 +24115,7 @@ var require_stream_readable = __commonJS({
       this.decoder = null;
       this.encoding = null;
       if (options.encoding) {
-        if (!StringDecoder) StringDecoder = require("string_decoder/").StringDecoder;
+        if (!StringDecoder) StringDecoder = require_string_decoder().StringDecoder;
         this.decoder = new StringDecoder(options.encoding);
         this.encoding = options.encoding;
       }
@@ -24039,7 +24179,7 @@ var require_stream_readable = __commonJS({
       return !state.ended && (state.needReadable || state.length < state.highWaterMark || state.length === 0);
     }
     Readable.prototype.setEncoding = function (enc) {
-      if (!StringDecoder) StringDecoder = require("string_decoder/").StringDecoder;
+      if (!StringDecoder) StringDecoder = require_string_decoder().StringDecoder;
       this._readableState.decoder = new StringDecoder(enc);
       this._readableState.encoding = enc;
       return this;
@@ -54473,6 +54613,9 @@ var require_main2 = __commonJS({
     var importModuleDynamically = () => {
       throw "Dynamic imports are not allowed.";
     };
+    var MODULE_PREFIX = "(function (exports, require, module, __filename, __dirname) { ";
+    var STRICT_MODULE_PREFIX = MODULE_PREFIX + '"use strict"; ';
+    var MODULE_SUFFIX = "\n});";
     function loadAndCompileScript(filename, prefix, suffix) {
       const data = fs.readFileSync(filename, "utf8");
       return new vm.Script(prefix + data + suffix, {
@@ -54605,6 +54748,10 @@ var require_main2 = __commonJS({
             value: null,
             writable: true
           },
+          _compiledNodeVMStrict: {
+            value: null,
+            writable: true
+          },
           _compiledCode: {
             value: null,
             writable: true
@@ -54620,6 +54767,7 @@ var require_main2 = __commonJS({
         this._suffix = strSuffix;
         this._compiledVM = null;
         this._compiledNodeVM = null;
+        this._compiledNodeVMStrict = null;
         return this;
       }
       compile() {
@@ -54651,10 +54799,14 @@ var require_main2 = __commonJS({
       _compileNodeVM() {
         let script = this._compiledNodeVM;
         if (!script) {
-          this._compiledNodeVM = script = this._compile(
-            "(function (exports, require, module, __filename, __dirname) { ",
-            "\n})"
-          );
+          this._compiledNodeVM = script = this._compile(MODULE_PREFIX, MODULE_SUFFIX);
+        }
+        return script;
+      }
+      _compileNodeVMStrict() {
+        let script = this._compiledNodeVMStrict;
+        if (!script) {
+          this._compiledNodeVMStrict = script = this._compile(STRICT_MODULE_PREFIX, MODULE_SUFFIX);
         }
         return script;
       }
@@ -54681,10 +54833,21 @@ var require_main2 = __commonJS({
         ctx.fn = null;
       }
     }
-    function makeCheckAsync(internal) {
+    function tryCompile(args2) {
+      const code = args2[args2.length - 1];
+      const params = args2.slice(0, -1);
+      vm.compileFunction(code, params);
+    }
+    function makeCheckHook(checkAsync, checkImport) {
+      if (!checkAsync && !checkImport) return null;
       return (hook, args2) => {
-        if (hook === "function" || hook === "generator_function" || hook === "eval" || hook === "run") {
-          const funcConstructor = internal.Function;
+        if (
+          hook === "function" ||
+          hook === "generator_function" ||
+          hook === "eval" ||
+          hook === "run" ||
+          (!checkAsync && (hook === "async_function" || hook === "async_generator_function"))
+        ) {
           if (hook === "eval") {
             const script = args2[0];
             args2 = [script];
@@ -54692,21 +54855,36 @@ var require_main2 = __commonJS({
           } else {
             args2 = args2.map((arg) => `${arg}`);
           }
-          if (args2.findIndex((arg) => /\basync\b/.test(arg)) === -1) return args2;
-          const asyncMapped = args2.map((arg) => arg.replace(/async/g, "a\\u0073ync"));
+          const hasAsync = checkAsync && args2.findIndex((arg) => /\basync\b/.test(arg)) !== -1;
+          const hasImport = checkImport && args2.findIndex((arg) => /\bimport\b/.test(arg)) !== -1;
+          if (!hasAsync && !hasImport) return args2;
+          const mapped = args2.map((arg) => {
+            if (hasAsync) arg = arg.replace(/async/g, "a\\u0073ync");
+            if (hasImport) arg = arg.replace(/import/g, "i\\u006dport");
+            return arg;
+          });
           try {
-            funcConstructor(...asyncMapped);
+            tryCompile(mapped);
           } catch (u) {
-            try {
-              funcConstructor(...args2);
-            } catch (e) {
-              throw internal.Decontextify.value(e);
+            tryCompile(args2);
+            if (hasAsync && hasImport) {
+              const mapped2 = args2.map((arg) => arg.replace(/async/g, "a\\u0073ync"));
+              try {
+                tryCompile(mapped2);
+              } catch (e) {
+                throw new VMError("Async not available");
+              }
+              throw new VMError("Dynamic Import not supported");
             }
-            throw new VMError("Async not available");
+            if (hasAsync) {
+              throw new VMError("Async not available");
+            }
+            throw new VMError("Dynamic Import not supported");
           }
           return args2;
         }
-        throw new VMError("Async not available");
+        if (checkAsync) throw new VMError("Async not available");
+        return args2;
       };
     }
     var VM = class extends EventEmitter {
@@ -54729,7 +54907,7 @@ var require_main2 = __commonJS({
         const _internal = CACHE.contextifyScript
           .runInContext(_context, DEFAULT_RUN_OPTIONS)
           .call(_context, require, HOST);
-        const hook = fixAsync ? makeCheckAsync(_internal) : null;
+        const hook = makeCheckHook(fixAsync, true);
         Object.defineProperties(this, {
           timeout: {
             value: timeout,
@@ -54904,7 +55082,8 @@ var require_main2 = __commonJS({
             require: options.require || false,
             nesting: options.nesting || false,
             wrapper: options.wrapper || "commonjs",
-            sourceExtensions: options.sourceExtensions || ["js"]
+            sourceExtensions: options.sourceExtensions || ["js"],
+            strict: options.strict || false
           }
         });
         let sandboxScript = CACHE.sandboxScript;
@@ -54955,7 +55134,22 @@ var require_main2 = __commonJS({
         let resolvedFilename;
         let script;
         if (code instanceof VMScript) {
-          script = code._compileNodeVM();
+          if (this._hook) {
+            const prefix = this.options.strict ? STRICT_MODULE_PREFIX : MODULE_PREFIX;
+            const scriptCode = prefix + code.getCompiledCode() + MODULE_SUFFIX;
+            const changed = this._hook("run", [scriptCode])[0];
+            if (changed === scriptCode) {
+              script = this.options.strict ? code._compileNodeVMStrict() : code._compileNodeVM();
+            } else {
+              script = new vm.Script(changed, {
+                filename: code.filename,
+                displayErrors: false,
+                importModuleDynamically
+              });
+            }
+          } else {
+            script = this.options.strict ? code._compileNodeVMStrict() : code._compileNodeVM();
+          }
           resolvedFilename = pa.resolve(code.filename);
           dirname = pa.dirname(resolvedFilename);
         } else {
@@ -54967,16 +55161,16 @@ var require_main2 = __commonJS({
             resolvedFilename = null;
             dirname = null;
           }
-          script = new vm.Script(
-            "(function (exports, require, module, __filename, __dirname) { " +
-              this._compiler(code, unresolvedFilename) +
-              "\n})",
-            {
-              filename: unresolvedFilename,
-              displayErrors: false,
-              importModuleDynamically
-            }
-          );
+          const prefix = this.options.strict ? STRICT_MODULE_PREFIX : MODULE_PREFIX;
+          let scriptCode = prefix + this._compiler(code, unresolvedFilename) + MODULE_SUFFIX;
+          if (this._hook) {
+            scriptCode = this._hook("run", [scriptCode])[0];
+          }
+          script = new vm.Script(scriptCode, {
+            filename: unresolvedFilename,
+            displayErrors: false,
+            importModuleDynamically
+          });
         }
         const wrapper = this.options.wrapper;
         const module3 = this._internal.Contextify.makeModule();
@@ -55072,7 +55266,10 @@ var require_main2 = __commonJS({
       INSPECT_MAX_BYTES,
       VM,
       NodeVM,
-      helpers
+      helpers,
+      MODULE_PREFIX,
+      STRICT_MODULE_PREFIX,
+      MODULE_SUFFIX
     };
     exports2.VMError = VMError;
     exports2.NodeVM = NodeVM;
