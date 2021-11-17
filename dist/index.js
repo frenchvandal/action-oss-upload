@@ -18544,11 +18544,12 @@ var require_standard = __commonJS({
       "application/docbook+xml": ["dbk"],
       "application/dssc+der": ["dssc"],
       "application/dssc+xml": ["xdssc"],
-      "application/ecmascript": ["ecma", "es"],
+      "application/ecmascript": ["es", "ecma"],
       "application/emma+xml": ["emma"],
       "application/emotionml+xml": ["emotionml"],
       "application/epub+zip": ["epub"],
       "application/exi": ["exi"],
+      "application/express": ["exp"],
       "application/fdt+xml": ["fdt"],
       "application/font-tdpfr": ["pfr"],
       "application/geo+json": ["geojson"],
@@ -18589,8 +18590,6 @@ var require_standard = __commonJS({
       "application/mods+xml": ["mods"],
       "application/mp21": ["m21", "mp21"],
       "application/mp4": ["mp4s", "m4p"],
-      "application/mrb-consumer+xml": ["*xdf"],
-      "application/mrb-publish+xml": ["*xdf"],
       "application/msword": ["doc", "dot"],
       "application/mxf": ["mxf"],
       "application/n-quads": ["nq"],
@@ -18627,7 +18626,7 @@ var require_standard = __commonJS({
       "application/onenote": ["onetoc", "onetoc2", "onetmp", "onepkg"],
       "application/oxps": ["oxps"],
       "application/p2p-overlay+xml": ["relo"],
-      "application/patch-ops-error+xml": ["*xer"],
+      "application/patch-ops-error+xml": ["xer"],
       "application/pdf": ["pdf"],
       "application/pgp-encrypted": ["pgp"],
       "application/pgp-signature": ["asc", "sig"],
@@ -18686,6 +18685,7 @@ var require_standard = __commonJS({
       "application/thraud+xml": ["tfi"],
       "application/timestamped-data": ["tsd"],
       "application/toml": ["toml"],
+      "application/trig": ["trig"],
       "application/ttml+xml": ["ttml"],
       "application/ubjson": ["ubj"],
       "application/urc-ressheet+xml": ["rsheet"],
@@ -18701,7 +18701,6 @@ var require_standard = __commonJS({
       "application/xcap-caps+xml": ["xca"],
       "application/xcap-diff+xml": ["xdf"],
       "application/xcap-el+xml": ["xel"],
-      "application/xcap-error+xml": ["xer"],
       "application/xcap-ns+xml": ["xns"],
       "application/xenc+xml": ["xenc"],
       "application/xhtml+xml": ["xhtml", "xht"],
@@ -18791,6 +18790,9 @@ var require_standard = __commonJS({
       "model/mesh": ["msh", "mesh", "silo"],
       "model/mtl": ["mtl"],
       "model/obj": ["obj"],
+      "model/step+xml": ["stpx"],
+      "model/step+zip": ["stpz"],
+      "model/step-xml+zip": ["stpxz"],
       "model/stl": ["stl"],
       "model/vrml": ["wrl", "vrml"],
       "model/x3d+binary": ["*x3db", "x3dbz"],
@@ -19033,6 +19035,7 @@ var require_other = __commonJS({
       "application/vnd.lotus-screencam": ["scm"],
       "application/vnd.lotus-wordpro": ["lwp"],
       "application/vnd.macports.portpkg": ["portpkg"],
+      "application/vnd.mapbox-vector-tile": ["mvt"],
       "application/vnd.mcd": ["mcd"],
       "application/vnd.medcalcdata": ["mc1"],
       "application/vnd.mediastation.cdkey": ["cdkey"],
@@ -19278,6 +19281,9 @@ var require_other = __commonJS({
       "application/x-httpd-php": ["php"],
       "application/x-install-instructions": ["install"],
       "application/x-iso9660-image": ["*iso"],
+      "application/x-iwork-keynote-sffkey": ["*key"],
+      "application/x-iwork-numbers-sffnumbers": ["*numbers"],
+      "application/x-iwork-pages-sffpages": ["*pages"],
       "application/x-java-archive-diff": ["jardiff"],
       "application/x-java-jnlp-file": ["jnlp"],
       "application/x-keepass2": ["kdbx"],
@@ -19435,6 +19441,7 @@ var require_other = __commonJS({
       "model/vnd.opengex": ["ogex"],
       "model/vnd.parasolid.transmit.binary": ["x_b"],
       "model/vnd.parasolid.transmit.text": ["x_t"],
+      "model/vnd.sap.vds": ["vds"],
       "model/vnd.usdz+zip": ["usdz"],
       "model/vnd.valve.source.compiled-map": ["bsp"],
       "model/vnd.vtu": ["vtu"],
@@ -27583,7 +27590,12 @@ var require_bytes = __commonJS({
         str = str.replace(formatDecimalsRegExp, "$1");
       }
       if (thousandsSeparator) {
-        str = str.replace(formatThousandsRegExp, thousandsSeparator);
+        str = str
+          .split(".")
+          .map(function (s, i) {
+            return i === 0 ? s.replace(formatThousandsRegExp, thousandsSeparator) : s;
+          })
+          .join(".");
       }
       return str + unitSeparator + unit;
     }
@@ -28053,7 +28065,7 @@ var require_setprototypeof = __commonJS({
     }
     function mixinProperties(obj, proto) {
       for (var prop in proto) {
-        if (!obj.hasOwnProperty(prop)) {
+        if (!Object.prototype.hasOwnProperty.call(obj, prop)) {
           obj[prop] = proto[prop];
         }
       }
@@ -28065,6 +28077,7 @@ var require_setprototypeof = __commonJS({
 // node_modules/toidentifier/index.js
 var require_toidentifier = __commonJS({
   "node_modules/toidentifier/index.js"(exports2, module2) {
+    "use strict";
     module2.exports = toIdentifier;
     function toIdentifier(str) {
       return str
@@ -28089,6 +28102,7 @@ var require_http_errors = __commonJS({
     var toIdentifier = require_toidentifier();
     module2.exports = createError;
     module2.exports.HttpError = createHttpErrorConstructor();
+    module2.exports.isHttpError = createIsHttpErrorFunction(module2.exports.HttpError);
     populateConstructorExports(module2.exports, statuses.codes, module2.exports.HttpError);
     function codeClass(status) {
       return Number(String(status).charAt(0) + "00");
@@ -28150,7 +28164,7 @@ var require_http_errors = __commonJS({
       return HttpError;
     }
     function createClientErrorConstructor(HttpError, name, code) {
-      var className = name.match(/Error$/) ? name : name + "Error";
+      var className = toClassName(name);
       function ClientError(message2) {
         var msg = message2 != null ? message2 : statuses[code];
         var err = new Error(msg);
@@ -28177,8 +28191,24 @@ var require_http_errors = __commonJS({
       ClientError.prototype.expose = true;
       return ClientError;
     }
+    function createIsHttpErrorFunction(HttpError) {
+      return function isHttpError(val) {
+        if (!val || typeof val !== "object") {
+          return false;
+        }
+        if (val instanceof HttpError) {
+          return true;
+        }
+        return (
+          val instanceof Error &&
+          typeof val.expose === "boolean" &&
+          typeof val.statusCode === "number" &&
+          val.status === val.statusCode
+        );
+      };
+    }
     function createServerErrorConstructor(HttpError, name, code) {
-      var className = name.match(/Error$/) ? name : name + "Error";
+      var className = toClassName(name);
       function ServerError(message2) {
         var msg = message2 != null ? message2 : statuses[code];
         var err = new Error(msg);
@@ -28230,6 +28260,9 @@ var require_http_errors = __commonJS({
         }
       });
       exports3["I'mateapot"] = deprecate2.function(exports3.ImATeapot, `"I'mateapot"; use "ImATeapot" instead`);
+    }
+    function toClassName(name) {
+      return name.substr(-5) !== "Error" ? name + "Error" : name;
     }
   }
 });
