@@ -3,8 +3,8 @@
   "description": "This GitHub Action uploads generated files to an OSS bucket",
   "main": "dist/index.js",
   "engines": {
-    "node": ">=16.2.0",
-    "npm": ">=7.13.0"
+    "node": ">=16.13.0",
+    "npm": ">=7.9.0"
   },
   "scripts": {
     "precompile": "npm run lint && npm run format",
@@ -42,9 +42,9 @@
     "@commitlint/cli": "^15.0.0",
     "@commitlint/config-conventional": "^15.0.0",
     "@types/ali-oss": "^6.16.2",
-    "@types/eslint": "^7.29.0",
+    "@types/eslint": "^8.2.0",
     "@types/eslint-plugin-prettier": "^3.1.0",
-    "@types/node": "^16.11.7",
+    "@types/node": "^16.11.8",
     "@types/prettier": "^2.4.2",
     "@types/standard-version": "^7.0.1",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
@@ -54,10 +54,10 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
     "husky": "^7.0.4",
-    "lint-staged": "^12.0.2",
+    "lint-staged": "^12.0.3",
     "prettier": "^2.4.1",
     "standard-version": "^9.3.2",
-    "typescript": "^4.4.4"
+    "typescript": "^4.5.2"
   },
   "lint-staged": {
     "*.ts": [
