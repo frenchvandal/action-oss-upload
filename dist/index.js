@@ -56626,7 +56626,7 @@ var require_package3 = __commonJS({
   "node_modules/urllib/package.json"(exports2, module2) {
     module2.exports = {
       name: "urllib",
-      version: "2.37.4",
+      version: "2.38.0",
       description:
         "Help in opening URLs (mostly HTTP) in a complex world \u2014 basic and digest authentication, redirections, cookies and more.",
       keywords: ["urllib", "http", "urlopen", "curl", "wget", "request", "https"],
@@ -56640,10 +56640,11 @@ var require_package3 = __commonJS({
         url: "git://github.com/node-modules/urllib.git"
       },
       scripts: {
+        tsd: "node test/tsd.js",
         "test-local": "mocha -t 30000 -r intelli-espower-loader test/*.test.js",
         test: "npm run lint && npm run test-local",
         "test-cov": "istanbul cover node_modules/mocha/bin/_mocha -- -t 30000 -r intelli-espower-loader test/*.test.js",
-        ci: "npm run lint && npm run test-cov",
+        ci: "npm run lint && npm run tsd && npm run test-cov",
         lint: "jshint .",
         autod: "autod -w --prefix '^' -t test -e examples",
         contributor: "git-contributor"
@@ -56690,7 +56691,8 @@ var require_package3 = __commonJS({
         spy: "^1.0.0",
         tar: "^4.4.8",
         through2: "^2.0.3",
-        typescript: "^3.2.2"
+        tsd: "^0.18.0",
+        typescript: "^4.4.4"
       },
       engines: {
         node: ">= 0.10.0"
@@ -56700,7 +56702,7 @@ var require_package3 = __commonJS({
         os: {
           github: "linux, windows, macos"
         },
-        version: "8, 10, 12, 14"
+        version: "8, 10, 12, 14, 16"
       },
       license: "MIT"
     };
