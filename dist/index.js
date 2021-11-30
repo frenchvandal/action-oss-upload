@@ -1583,7 +1583,7 @@ var require_internal_path_helper = __commonJS({
     var path2 = __importStar(require("path"));
     var assert_1 = __importDefault(require("assert"));
     var IS_WINDOWS = process.platform === "win32";
-    function dirname(p) {
+    function dirname2(p) {
       p = safeTrimTrailingSeparator(p);
       if (IS_WINDOWS && /^\\\\[^\\]+(\\[^\\]+)?$/.test(p)) {
         return p;
@@ -1594,7 +1594,7 @@ var require_internal_path_helper = __commonJS({
       }
       return result;
     }
-    exports2.dirname = dirname;
+    exports2.dirname = dirname2;
     function ensureAbsoluteRoot(root, itemPath) {
       assert_1.default(root, `ensureAbsoluteRoot parameter 'root' must not be empty`);
       assert_1.default(itemPath, `ensureAbsoluteRoot parameter 'itemPath' must not be empty`);
@@ -2642,8 +2642,8 @@ var require_internal_path = __commonJS({
             let remaining = itemPath;
             let dir = pathHelper.dirname(remaining);
             while (dir !== remaining) {
-              const basename = path2.basename(remaining);
-              this.segments.unshift(basename);
+              const basename2 = path2.basename(remaining);
+              this.segments.unshift(basename2);
               remaining = dir;
               dir = pathHelper.dirname(remaining);
             }
@@ -14145,7 +14145,7 @@ var require_get_intrinsic = __commonJS({
       "%JSON%": typeof JSON === "object" ? JSON : undefined2,
       "%Map%": typeof Map === "undefined" ? undefined2 : Map,
       "%MapIteratorPrototype%":
-        typeof Map === "undefined" || !hasSymbols ? undefined2 : getProto(new Map()[Symbol.iterator]()),
+        typeof Map === "undefined" || !hasSymbols ? undefined2 : getProto(/* @__PURE__ */ new Map()[Symbol.iterator]()),
       "%Math%": Math,
       "%Number%": Number,
       "%Object%": Object,
@@ -14159,7 +14159,7 @@ var require_get_intrinsic = __commonJS({
       "%RegExp%": RegExp,
       "%Set%": typeof Set === "undefined" ? undefined2 : Set,
       "%SetIteratorPrototype%":
-        typeof Set === "undefined" || !hasSymbols ? undefined2 : getProto(new Set()[Symbol.iterator]()),
+        typeof Set === "undefined" || !hasSymbols ? undefined2 : getProto(/* @__PURE__ */ new Set()[Symbol.iterator]()),
       "%SharedArrayBuffer%": typeof SharedArrayBuffer === "undefined" ? undefined2 : SharedArrayBuffer,
       "%String%": String,
       "%StringIteratorPrototype%": hasSymbols ? getProto(""[Symbol.iterator]()) : undefined2,
@@ -20283,7 +20283,7 @@ var require_lru_cache = __commonJS({
         if (this[DISPOSE] && this[LRU_LIST] && this[LRU_LIST].length) {
           this[LRU_LIST].forEach((hit) => this[DISPOSE](hit.key, hit.value));
         }
-        this[CACHE] = new Map();
+        this[CACHE] = /* @__PURE__ */ new Map();
         this[LRU_LIST] = new Yallist();
         this[LENGTH] = 0;
       }
@@ -40293,7 +40293,7 @@ var require_array_set = __commonJS({
     var hasNativeMap = typeof Map !== "undefined";
     function ArraySet() {
       this._array = [];
-      this._set = hasNativeMap ? new Map() : Object.create(null);
+      this._set = hasNativeMap ? /* @__PURE__ */ new Map() : Object.create(null);
     }
     ArraySet.fromArray = function ArraySet_fromArray(aArray, aAllowDuplicates) {
       var set = new ArraySet();
@@ -55163,7 +55163,7 @@ var require_main2 = __commonJS({
         return this.run(`module.exports = require('${module3}');`, "vm.js");
       }
       run(code, filename) {
-        let dirname;
+        let dirname2;
         let resolvedFilename;
         let script;
         if (code instanceof VMScript) {
@@ -55184,15 +55184,15 @@ var require_main2 = __commonJS({
             script = this.options.strict ? code._compileNodeVMStrict() : code._compileNodeVM();
           }
           resolvedFilename = pa.resolve(code.filename);
-          dirname = pa.dirname(resolvedFilename);
+          dirname2 = pa.dirname(resolvedFilename);
         } else {
           const unresolvedFilename = filename || "vm.js";
           if (filename) {
             resolvedFilename = pa.resolve(filename);
-            dirname = pa.dirname(resolvedFilename);
+            dirname2 = pa.dirname(resolvedFilename);
           } else {
             resolvedFilename = null;
-            dirname = null;
+            dirname2 = null;
           }
           const prefix = this.options.strict ? STRICT_MODULE_PREFIX : MODULE_PREFIX;
           let scriptCode = prefix + this._compiler(code, unresolvedFilename) + MODULE_SUFFIX;
@@ -55212,10 +55212,10 @@ var require_main2 = __commonJS({
           const returned = closure.call(
             this._context,
             module3.exports,
-            this._prepareRequire(dirname),
+            this._prepareRequire(dirname2),
             module3,
             resolvedFilename,
-            dirname
+            dirname2
           );
           return this._internal.Decontextify.value(wrapper === "commonjs" ? module3.exports : returned);
         } catch (e) {
@@ -64470,7 +64470,7 @@ var credentials = {
   region: (0, import_core.getInput)("region", { required: true })
 };
 var client = new import_ali_oss.default(credentials);
-function objectify(filePath, baseName, prefix) {
+var objectify = function transformFileToObject(filePath, baseName, prefix) {
   let fileToObject = filePath.split(processSlash);
   if (baseName) {
     const forDeletion = baseName.split(processSlash);
@@ -64479,7 +64479,7 @@ function objectify(filePath, baseName, prefix) {
   if (prefix) fileToObject.unshift(prefix);
   const objectFile = fileToObject.join(import_path.posix.sep);
   return objectFile;
-}
+};
 (async () => {
   try {
     let index = 0;
@@ -64491,6 +64491,9 @@ function objectify(filePath, baseName, prefix) {
     const size = (await uploadDir.glob()).length;
     (0, import_core.info)(`${size} files to upload`);
     for await (const file of localFiles) {
+      (0, import_core.info)(
+        `${file} >> ${(0, import_path.basename)((0, import_path.dirname)(file))} >> ${(0, import_path.basename)(file)}`
+      );
       const objectName = objectify(file, homeDir);
       const response = await client.put(objectName, file);
       index += 1;
