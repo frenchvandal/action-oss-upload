@@ -1583,7 +1583,7 @@ var require_internal_path_helper = __commonJS({
     var path2 = __importStar(require("path"));
     var assert_1 = __importDefault(require("assert"));
     var IS_WINDOWS = process.platform === "win32";
-    function dirname2(p) {
+    function dirname(p) {
       p = safeTrimTrailingSeparator(p);
       if (IS_WINDOWS && /^\\\\[^\\]+(\\[^\\]+)?$/.test(p)) {
         return p;
@@ -1594,7 +1594,7 @@ var require_internal_path_helper = __commonJS({
       }
       return result;
     }
-    exports2.dirname = dirname2;
+    exports2.dirname = dirname;
     function ensureAbsoluteRoot(root, itemPath) {
       assert_1.default(root, `ensureAbsoluteRoot parameter 'root' must not be empty`);
       assert_1.default(itemPath, `ensureAbsoluteRoot parameter 'itemPath' must not be empty`);
@@ -2642,8 +2642,8 @@ var require_internal_path = __commonJS({
             let remaining = itemPath;
             let dir = pathHelper.dirname(remaining);
             while (dir !== remaining) {
-              const basename2 = path2.basename(remaining);
-              this.segments.unshift(basename2);
+              const basename = path2.basename(remaining);
+              this.segments.unshift(basename);
               remaining = dir;
               dir = pathHelper.dirname(remaining);
             }
@@ -22870,10 +22870,10 @@ var require_symlink = __commonJS({
       pathExists(dstpath, (err, destinationExists) => {
         if (err) return callback(err);
         if (destinationExists) return callback(null);
-        symlinkPaths(srcpath, dstpath, (err2, relative2) => {
+        symlinkPaths(srcpath, dstpath, (err2, relative3) => {
           if (err2) return callback(err2);
-          srcpath = relative2.toDst;
-          symlinkType(relative2.toCwd, type2, (err3, type3) => {
+          srcpath = relative3.toDst;
+          symlinkType(relative3.toCwd, type2, (err3, type3) => {
             if (err3) return callback(err3);
             const dir = path2.dirname(dstpath);
             pathExists(dir, (err4, dirExists) => {
@@ -22891,9 +22891,9 @@ var require_symlink = __commonJS({
     function createSymlinkSync(srcpath, dstpath, type2) {
       const destinationExists = fs.existsSync(dstpath);
       if (destinationExists) return void 0;
-      const relative2 = symlinkPathsSync(srcpath, dstpath);
-      srcpath = relative2.toDst;
-      type2 = symlinkTypeSync(relative2.toCwd, type2);
+      const relative3 = symlinkPathsSync(srcpath, dstpath);
+      srcpath = relative3.toDst;
+      type2 = symlinkTypeSync(relative3.toCwd, type2);
       const dir = path2.dirname(dstpath);
       const exists = fs.existsSync(dir);
       if (exists) return fs.symlinkSync(srcpath, dstpath, type2);
@@ -40098,7 +40098,7 @@ var require_util3 = __commonJS({
     exports2.isAbsolute = function (aPath) {
       return aPath.charAt(0) === "/" || urlRegexp.test(aPath);
     };
-    function relative2(aRoot, aPath) {
+    function relative3(aRoot, aPath) {
       if (aRoot === "") {
         aRoot = ".";
       }
@@ -40117,7 +40117,7 @@ var require_util3 = __commonJS({
       }
       return Array(level + 1).join("../") + aPath.substr(aRoot.length + 1);
     }
-    exports2.relative = relative2;
+    exports2.relative = relative3;
     var supportsNullProto = (function () {
       var obj = Object.create(null);
       return !("__proto__" in obj);
@@ -55163,7 +55163,7 @@ var require_main2 = __commonJS({
         return this.run(`module.exports = require('${module3}');`, "vm.js");
       }
       run(code, filename) {
-        let dirname2;
+        let dirname;
         let resolvedFilename;
         let script;
         if (code instanceof VMScript) {
@@ -55184,15 +55184,15 @@ var require_main2 = __commonJS({
             script = this.options.strict ? code._compileNodeVMStrict() : code._compileNodeVM();
           }
           resolvedFilename = pa.resolve(code.filename);
-          dirname2 = pa.dirname(resolvedFilename);
+          dirname = pa.dirname(resolvedFilename);
         } else {
           const unresolvedFilename = filename || "vm.js";
           if (filename) {
             resolvedFilename = pa.resolve(filename);
-            dirname2 = pa.dirname(resolvedFilename);
+            dirname = pa.dirname(resolvedFilename);
           } else {
             resolvedFilename = null;
-            dirname2 = null;
+            dirname = null;
           }
           const prefix = this.options.strict ? STRICT_MODULE_PREFIX : MODULE_PREFIX;
           let scriptCode = prefix + this._compiler(code, unresolvedFilename) + MODULE_SUFFIX;
@@ -55212,10 +55212,10 @@ var require_main2 = __commonJS({
           const returned = closure.call(
             this._context,
             module3.exports,
-            this._prepareRequire(dirname2),
+            this._prepareRequire(dirname),
             module3,
             resolvedFilename,
-            dirname2
+            dirname
           );
           return this._internal.Decontextify.value(wrapper === "commonjs" ? module3.exports : returned);
         } catch (e) {
@@ -64491,9 +64491,7 @@ var objectify = function transformFileToObject(filePath, baseName, prefix) {
     const size = (await uploadDir.glob()).length;
     (0, import_core.info)(`${size} files to upload`);
     for await (const file of localFiles) {
-      (0, import_core.info)(
-        `${file} >> ${(0, import_path.basename)((0, import_path.dirname)(file))} >> ${(0, import_path.basename)(file)}`
-      );
+      (0, import_core.info)(`${file} >> ${(0, import_path.relative)(homeDir, file)}`);
       const objectName = objectify(file, homeDir);
       const response = await client.put(objectName, file);
       index += 1;
