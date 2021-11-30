@@ -51,10 +51,7 @@ const objectify = function transformFileToObject(
 
     for await (const file of localFiles) {
       info(
-        `${file} >> ${relative(homeDir, file).replaceAll(
-          processSlash,
-          posix.sep,
-        )}`,
+        `${file} >> ${relative(homeDir, file).split(processSlash).join('/')}`,
       );
 
       const objectName: string = objectify(file, homeDir);

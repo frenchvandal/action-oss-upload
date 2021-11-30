@@ -64491,9 +64491,7 @@ var objectify = function transformFileToObject(filePath, baseName, prefix) {
     const size = (await uploadDir.glob()).length;
     (0, import_core.info)(`${size} files to upload`);
     for await (const file of localFiles) {
-      (0, import_core.info)(
-        `${file} >> ${(0, import_path.relative)(homeDir, file).replaceAll(processSlash, import_path.posix.sep)}`
-      );
+      (0, import_core.info)(`${file} >> ${(0, import_path.relative)(homeDir, file).split(processSlash).join("/")}`);
       const objectName = objectify(file, homeDir);
       const response = await client.put(objectName, file);
       index += 1;
