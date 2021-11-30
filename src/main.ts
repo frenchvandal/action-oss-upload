@@ -1,7 +1,7 @@
 import { getInput, info } from '@actions/core';
 import { create, Globber } from '@actions/glob';
 import OSS, { Options, PutObjectResult } from 'ali-oss';
-import { join, posix, relative, sep } from 'path';
+import { join, posix, sep } from 'path';
 
 const processSlash: string = sep;
 
@@ -50,7 +50,7 @@ const objectify = function transformFileToObject(
     info(`${size} files to upload`);
 
     for await (const file of localFiles) {
-      info(`${file} >> ${relative(homeDir, file)}`);
+      info(`${file} >> ${posix.relative(homeDir, file)}`);
 
       const objectName: string = objectify(file, homeDir);
 

@@ -22870,10 +22870,10 @@ var require_symlink = __commonJS({
       pathExists(dstpath, (err, destinationExists) => {
         if (err) return callback(err);
         if (destinationExists) return callback(null);
-        symlinkPaths(srcpath, dstpath, (err2, relative3) => {
+        symlinkPaths(srcpath, dstpath, (err2, relative2) => {
           if (err2) return callback(err2);
-          srcpath = relative3.toDst;
-          symlinkType(relative3.toCwd, type2, (err3, type3) => {
+          srcpath = relative2.toDst;
+          symlinkType(relative2.toCwd, type2, (err3, type3) => {
             if (err3) return callback(err3);
             const dir = path2.dirname(dstpath);
             pathExists(dir, (err4, dirExists) => {
@@ -22891,9 +22891,9 @@ var require_symlink = __commonJS({
     function createSymlinkSync(srcpath, dstpath, type2) {
       const destinationExists = fs.existsSync(dstpath);
       if (destinationExists) return void 0;
-      const relative3 = symlinkPathsSync(srcpath, dstpath);
-      srcpath = relative3.toDst;
-      type2 = symlinkTypeSync(relative3.toCwd, type2);
+      const relative2 = symlinkPathsSync(srcpath, dstpath);
+      srcpath = relative2.toDst;
+      type2 = symlinkTypeSync(relative2.toCwd, type2);
       const dir = path2.dirname(dstpath);
       const exists = fs.existsSync(dir);
       if (exists) return fs.symlinkSync(srcpath, dstpath, type2);
@@ -40098,7 +40098,7 @@ var require_util3 = __commonJS({
     exports2.isAbsolute = function (aPath) {
       return aPath.charAt(0) === "/" || urlRegexp.test(aPath);
     };
-    function relative3(aRoot, aPath) {
+    function relative2(aRoot, aPath) {
       if (aRoot === "") {
         aRoot = ".";
       }
@@ -40117,7 +40117,7 @@ var require_util3 = __commonJS({
       }
       return Array(level + 1).join("../") + aPath.substr(aRoot.length + 1);
     }
-    exports2.relative = relative3;
+    exports2.relative = relative2;
     var supportsNullProto = (function () {
       var obj = Object.create(null);
       return !("__proto__" in obj);
@@ -64491,7 +64491,7 @@ var objectify = function transformFileToObject(filePath, baseName, prefix) {
     const size = (await uploadDir.glob()).length;
     (0, import_core.info)(`${size} files to upload`);
     for await (const file of localFiles) {
-      (0, import_core.info)(`${file} >> ${(0, import_path.relative)(homeDir, file)}`);
+      (0, import_core.info)(`${file} >> ${import_path.posix.relative(homeDir, file)}`);
       const objectName = objectify(file, homeDir);
       const response = await client.put(objectName, file);
       index += 1;
