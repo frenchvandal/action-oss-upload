@@ -14456,6 +14456,12 @@ var require_object_inspect = __commonJS({
     var symToString =
       typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? Symbol.prototype.toString : null;
     var hasShammedSymbols = typeof Symbol === "function" && typeof Symbol.iterator === "object";
+    var toStringTag =
+      typeof Symbol === "function" &&
+      Symbol.toStringTag &&
+      (typeof Symbol.toStringTag === hasShammedSymbols ? "object" : "symbol")
+        ? Symbol.toStringTag
+        : null;
     var isEnumerable = Object.prototype.propertyIsEnumerable;
     var gPO =
       (typeof Reflect === "function" ? Reflect.getPrototypeOf : Object.getPrototypeOf) ||
@@ -14466,8 +14472,6 @@ var require_object_inspect = __commonJS({
         : null);
     var inspectCustom = require_util_inspect().custom;
     var inspectSymbol = inspectCustom && isSymbol(inspectCustom) ? inspectCustom : null;
-    var toStringTag =
-      typeof Symbol === "function" && typeof Symbol.toStringTag !== "undefined" ? Symbol.toStringTag : null;
     module2.exports = function inspect_(obj, options, depth, seen) {
       var opts = options || {};
       if (has(opts, "quoteStyle") && opts.quoteStyle !== "single" && opts.quoteStyle !== "double") {
@@ -15298,6 +15302,7 @@ var require_stringify = __commonJS({
       }
     };
     var isArray2 = Array.isArray;
+    var split = String.prototype.split;
     var push = Array.prototype.push;
     var pushToArray = function (arr, valueOrArray) {
       push.apply(arr, isArray2(valueOrArray) ? valueOrArray : [valueOrArray]);
@@ -15331,6 +15336,7 @@ var require_stringify = __commonJS({
         typeof v === "bigint"
       );
     };
+    var sentinel = {};
     var stringify = function stringify2(
       object,
       prefix,
@@ -15349,8 +15355,22 @@ var require_stringify = __commonJS({
       sideChannel
     ) {
       var obj = object;
-      if (sideChannel.has(object)) {
-        throw new RangeError("Cyclic object value");
+      var tmpSc = sideChannel;
+      var step = 0;
+      var findFlag = false;
+      while ((tmpSc = tmpSc.get(sentinel)) !== void 0 && !findFlag) {
+        var pos = tmpSc.get(object);
+        step += 1;
+        if (typeof pos !== "undefined") {
+          if (pos === step) {
+            throw new RangeError("Cyclic object value");
+          } else {
+            findFlag = true;
+          }
+        }
+        if (typeof tmpSc.get(sentinel) === "undefined") {
+          step = 0;
+        }
       }
       if (typeof filter === "function") {
         obj = filter(prefix, obj);
@@ -15373,6 +15393,15 @@ var require_stringify = __commonJS({
       if (isNonNullishPrimitive(obj) || utils.isBuffer(obj)) {
         if (encoder3) {
           var keyValue = encodeValuesOnly ? prefix : encoder3(prefix, defaults.encoder, charset, "key", format);
+          if (generateArrayPrefix === "comma" && encodeValuesOnly) {
+            var valuesArray = split.call(String(obj), ",");
+            var valuesJoined = "";
+            for (var i = 0; i < valuesArray.length; ++i) {
+              valuesJoined +=
+                (i === 0 ? "" : ",") + formatter(encoder3(valuesArray[i], defaults.encoder, charset, "value", format));
+            }
+            return [formatter(keyValue) + "=" + valuesJoined];
+          }
           return [formatter(keyValue) + "=" + formatter(encoder3(obj, defaults.encoder, charset, "value", format))];
         }
         return [formatter(prefix) + "=" + formatter(String(obj))];
@@ -15390,8 +15419,8 @@ var require_stringify = __commonJS({
         var keys = Object.keys(obj);
         objKeys = sort ? keys.sort(sort) : keys;
       }
-      for (var i = 0; i < objKeys.length; ++i) {
-        var key = objKeys[i];
+      for (var j = 0; j < objKeys.length; ++j) {
+        var key = objKeys[j];
         var value = typeof key === "object" && key.value !== void 0 ? key.value : obj[key];
         if (skipNulls && value === null) {
           continue;
@@ -15401,8 +15430,9 @@ var require_stringify = __commonJS({
             ? generateArrayPrefix(prefix, key)
             : prefix
           : prefix + (allowDots ? "." + key : "[" + key + "]");
-        sideChannel.set(object, true);
+        sideChannel.set(object, step);
         var valueSideChannel = getSideChannel();
+        valueSideChannel.set(sentinel, sideChannel);
         pushToArray(
           values,
           stringify2(
