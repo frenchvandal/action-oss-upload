@@ -24,20 +24,19 @@ var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
 var __esm = (fn2, res) =>
   function __init() {
-    return fn2 && (res = (0, fn2[Object.keys(fn2)[0]])((fn2 = 0))), res;
+    return fn2 && (res = (0, fn2[__getOwnPropNames(fn2)[0]])((fn2 = 0))), res;
   };
 var __commonJS = (cb, mod) =>
   function __require() {
-    return mod || (0, cb[Object.keys(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
 var __export = (target, all) => {
-  __markAsModule(target);
   for (var name in all) __defProp(target, name, { get: all[name], enumerable: true });
 };
-var __reExport = (target, module2, desc) => {
+var __reExport = (target, module2, copyDefault, desc) => {
   if ((module2 && typeof module2 === "object") || typeof module2 === "function") {
     for (let key of __getOwnPropNames(module2))
-      if (!__hasOwnProp.call(target, key) && key !== "default")
+      if (!__hasOwnProp.call(target, key) && (copyDefault || key !== "default"))
         __defProp(target, key, {
           get: () => module2[key],
           enumerable: !(desc = __getOwnPropDesc(module2, key)) || desc.enumerable
@@ -45,13 +44,13 @@ var __reExport = (target, module2, desc) => {
   }
   return target;
 };
-var __toModule = (module2) => {
+var __toESM = (module2, isNodeMode) => {
   return __reExport(
     __markAsModule(
       __defProp(
         module2 != null ? __create(__getProtoOf(module2)) : {},
         "default",
-        module2 && module2.__esModule && "default" in module2
+        !isNodeMode && module2 && module2.__esModule
           ? { get: () => module2.default, enumerable: true }
           : { value: module2, enumerable: true }
       )
@@ -59,6 +58,14 @@ var __toModule = (module2) => {
     module2
   );
 };
+var __toCommonJS = /* @__PURE__ */ ((cache) => {
+  return (module2, temp) => {
+    return (
+      (cache && cache.get(module2)) ||
+      ((temp = __reExport(__markAsModule({}), module2, 1)), cache && cache.set(module2, temp), temp)
+    );
+  };
+})(typeof WeakMap !== "undefined" ? /* @__PURE__ */ new WeakMap() : 0);
 
 // node_modules/@actions/core/lib/utils.js
 var require_utils = __commonJS({
@@ -58790,7 +58797,8 @@ var require_signUtils = __commonJS({
   "node_modules/ali-oss/lib/common/signUtils.js"(exports2) {
     var crypto2 = require("crypto");
     var is2 = require_is_type_of();
-    var { lowercaseKeyHeader: lowercaseKeyHeader2 } = (init_lowercaseKeyHeader(), lowercaseKeyHeader_exports);
+    var { lowercaseKeyHeader: lowercaseKeyHeader2 } =
+      (init_lowercaseKeyHeader(), __toCommonJS(lowercaseKeyHeader_exports));
     exports2.buildCanonicalizedResource = function buildCanonicalizedResource(resourcePath, parameters) {
       let canonicalizedResource = `${resourcePath}`;
       let separatorString = "?";
@@ -58998,7 +59006,7 @@ function setRegion(region, internal = false, secure = false) {
 var import_url;
 var init_setRegion = __esm({
   "node_modules/ali-oss/lib/common/utils/setRegion.ts"() {
-    import_url = __toModule(require("url"));
+    import_url = __toESM(require("url"));
     init_checkConfigValid();
   }
 });
@@ -59008,9 +59016,9 @@ var require_initOptions = __commonJS({
   "node_modules/ali-oss/lib/common/client/initOptions.js"(exports2, module2) {
     var ms = require_humanize_ms();
     var urlutil3 = require("url");
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
-    var { setRegion: setRegion3 } = (init_setRegion(), setRegion_exports);
-    var { checkConfigValid: checkConfigValid2 } = (init_checkConfigValid(), checkConfigValid_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
+    var { setRegion: setRegion3 } = (init_setRegion(), __toCommonJS(setRegion_exports));
+    var { checkConfigValid: checkConfigValid2 } = (init_checkConfigValid(), __toCommonJS(checkConfigValid_exports));
     function setEndpoint(endpoint, secure) {
       checkConfigValid2(endpoint, "endpoint");
       let url = urlutil3.parse(endpoint);
@@ -59338,10 +59346,10 @@ function getReqUrl(params) {
 var import_copy_to, import_url2, import_merge_descriptors, import_is_type_of;
 var init_getReqUrl = __esm({
   "node_modules/ali-oss/lib/common/client/getReqUrl.ts"() {
-    import_copy_to = __toModule(require_copy_to());
-    import_url2 = __toModule(require("url"));
-    import_merge_descriptors = __toModule(require_merge_descriptors());
-    import_is_type_of = __toModule(require_is_type_of());
+    import_copy_to = __toESM(require_copy_to());
+    import_url2 = __toESM(require("url"));
+    import_merge_descriptors = __toESM(require_merge_descriptors());
+    import_is_type_of = __toESM(require_is_type_of());
     init_isIP();
     init_checkConfigValid();
   }
@@ -59450,10 +59458,10 @@ var init_createRequest = __esm({
     dateFormat = require_dateformat();
     copy2 = require_copy_to();
     path = require("path");
-    ({ encoder: encoder2 } = (init_encoder(), encoder_exports));
-    ({ isIP: isIP2 } = (init_isIP(), isIP_exports));
-    ({ setRegion: setRegion2 } = (init_setRegion(), setRegion_exports));
-    ({ getReqUrl: getReqUrl2 } = (init_getReqUrl(), getReqUrl_exports));
+    ({ encoder: encoder2 } = (init_encoder(), __toCommonJS(encoder_exports)));
+    ({ isIP: isIP2 } = (init_isIP(), __toCommonJS(isIP_exports)));
+    ({ setRegion: setRegion2 } = (init_setRegion(), __toCommonJS(setRegion_exports)));
+    ({ getReqUrl: getReqUrl2 } = (init_getReqUrl(), __toCommonJS(getReqUrl_exports)));
   }
 });
 
@@ -59656,7 +59664,7 @@ var require_getObjectMeta = __commonJS({
 // node_modules/ali-oss/lib/common/object/copyObject.js
 var require_copyObject = __commonJS({
   "node_modules/ali-oss/lib/common/object/copyObject.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
     var proto = exports2;
     var REPLACE_HEDERS = [
       "content-type",
@@ -59744,9 +59752,9 @@ var init_policy2Str = __esm({
 // node_modules/ali-oss/lib/common/object/calculatePostSignature.js
 var require_calculatePostSignature = __commonJS({
   "node_modules/ali-oss/lib/common/object/calculatePostSignature.js"(exports2) {
-    var { policy2Str: policy2Str2 } = (init_policy2Str(), policy2Str_exports);
+    var { policy2Str: policy2Str2 } = (init_policy2Str(), __toCommonJS(policy2Str_exports));
     var signHelper = require_signUtils();
-    var { isObject: isObject4 } = (init_isObject(), isObject_exports);
+    var { isObject: isObject4 } = (init_isObject(), __toCommonJS(isObject_exports));
     var proto = exports2;
     proto.calculatePostSignature = function calculatePostSignature(policy) {
       if (!isObject4(policy) && typeof policy !== "string") {
@@ -59775,7 +59783,7 @@ var require_calculatePostSignature = __commonJS({
 var require_getObjectTagging = __commonJS({
   "node_modules/ali-oss/lib/common/object/getObjectTagging.js"(exports2) {
     var proto = exports2;
-    var { isObject: isObject4 } = (init_isObject(), isObject_exports);
+    var { isObject: isObject4 } = (init_isObject(), __toCommonJS(isObject_exports));
     proto.getObjectTagging = async function getObjectTagging(name, options = {}) {
       options.subres = Object.assign({ tagging: "" }, options.subres);
       if (options.versionId) {
@@ -59886,8 +59894,8 @@ function checkObjectTag(tag) {
 var checkValid2, isObject2, commonRules, rules;
 var init_checkObjectTag = __esm({
   "node_modules/ali-oss/lib/common/utils/checkObjectTag.ts"() {
-    ({ checkValid: checkValid2 } = (init_checkValid(), checkValid_exports));
-    ({ isObject: isObject2 } = (init_isObject(), isObject_exports));
+    ({ checkValid: checkValid2 } = (init_checkValid(), __toCommonJS(checkValid_exports)));
+    ({ isObject: isObject2 } = (init_isObject(), __toCommonJS(isObject_exports)));
     commonRules = [
       {
         validator: (value) => {
@@ -59923,8 +59931,8 @@ var init_checkObjectTag = __esm({
 // node_modules/ali-oss/lib/common/object/putObjectTagging.js
 var require_putObjectTagging = __commonJS({
   "node_modules/ali-oss/lib/common/object/putObjectTagging.js"(exports2) {
-    var { obj2xml: obj2xml2 } = (init_obj2xml(), obj2xml_exports);
-    var { checkObjectTag: checkObjectTag2 } = (init_checkObjectTag(), checkObjectTag_exports);
+    var { obj2xml: obj2xml2 } = (init_obj2xml(), __toCommonJS(obj2xml_exports));
+    var { checkObjectTag: checkObjectTag2 } = (init_checkObjectTag(), __toCommonJS(checkObjectTag_exports));
     var proto = exports2;
     proto.putObjectTagging = async function putObjectTagging(name, tag, options = {}) {
       checkObjectTag2(tag);
@@ -59996,8 +60004,8 @@ var init_isArray = __esm({
 var require_getBucketVersions = __commonJS({
   "node_modules/ali-oss/lib/common/object/getBucketVersions.js"(exports2) {
     var proto = exports2;
-    var { isObject: isObject4 } = (init_isObject(), isObject_exports);
-    var { isArray: isArray2 } = (init_isArray(), isArray_exports);
+    var { isObject: isObject4 } = (init_isObject(), __toCommonJS(isObject_exports));
+    var { isArray: isArray2 } = (init_isArray(), __toCommonJS(isArray_exports));
     proto.getBucketVersions = getBucketVersions;
     proto.listObjectVersions = getBucketVersions;
     async function getBucketVersions(query = {}, options = {}) {
@@ -60088,7 +60096,7 @@ var require_getBucketVersions = __commonJS({
 var require_deleteMulti = __commonJS({
   "node_modules/ali-oss/lib/common/object/deleteMulti.js"(exports2) {
     var utility = require_utility();
-    var { obj2xml: obj2xml2 } = (init_obj2xml(), obj2xml_exports);
+    var { obj2xml: obj2xml2 } = (init_obj2xml(), __toCommonJS(obj2xml_exports));
     var proto = exports2;
     proto.deleteMulti = async function deleteMulti(names, options = {}) {
       const objects = [];
@@ -60363,7 +60371,7 @@ var init_getAsyncFetch = __esm({
 var require_generateObjectUrl = __commonJS({
   "node_modules/ali-oss/lib/common/object/generateObjectUrl.js"(exports2) {
     var urlutil3 = require("url");
-    var { isIP: isIP3 } = (init_isIP(), isIP_exports);
+    var { isIP: isIP3 } = (init_isIP(), __toCommonJS(isIP_exports));
     var proto = exports2;
     proto.generateObjectUrl = function generateObjectUrl(name, baseUrl) {
       if (isIP3(this.options.endpoint.hostname)) {
@@ -60387,7 +60395,7 @@ var require_generateObjectUrl = __commonJS({
 // node_modules/ali-oss/lib/common/object/getObjectUrl.js
 var require_getObjectUrl = __commonJS({
   "node_modules/ali-oss/lib/common/object/getObjectUrl.js"(exports2) {
-    var { isIP: isIP3 } = (init_isIP(), isIP_exports);
+    var { isIP: isIP3 } = (init_isIP(), __toCommonJS(isIP_exports));
     var proto = exports2;
     proto.getObjectUrl = function getObjectUrl(name, baseUrl) {
       if (isIP3(this.options.endpoint.hostname)) {
@@ -60410,7 +60418,7 @@ var require_signatureUrl = __commonJS({
     var utility = require_utility();
     var copy3 = require_copy_to();
     var signHelper = require_signUtils();
-    var { isIP: isIP3 } = (init_isIP(), isIP_exports);
+    var { isIP: isIP3 } = (init_isIP(), __toCommonJS(isIP_exports));
     var proto = exports2;
     proto.signatureUrl = function signatureUrl(name, options) {
       if (isIP3(this.options.endpoint.hostname)) {
@@ -60461,8 +60469,8 @@ var require_object2 = __commonJS({
     merge2(proto, require_head());
     merge2(proto, require_delete());
     merge2(proto, require_get());
-    merge2(proto, (init_postAsyncFetch(), postAsyncFetch_exports));
-    merge2(proto, (init_getAsyncFetch(), getAsyncFetch_exports));
+    merge2(proto, (init_postAsyncFetch(), __toCommonJS(postAsyncFetch_exports)));
+    merge2(proto, (init_getAsyncFetch(), __toCommonJS(getAsyncFetch_exports)));
     merge2(proto, require_generateObjectUrl());
     merge2(proto, require_getObjectUrl());
     merge2(proto, require_signatureUrl());
@@ -60525,8 +60533,8 @@ var require_object3 = __commonJS({
     var callback = require_callback();
     var { Transform } = require("stream");
     var pump = require_pump();
-    var { isBuffer: isBuffer2 } = (init_isBuffer(), isBuffer_exports);
-    var { retry: retry2 } = (init_retry(), retry_exports);
+    var { isBuffer: isBuffer2 } = (init_isBuffer(), __toCommonJS(isBuffer_exports));
+    var { retry: retry2 } = (init_retry(), __toCommonJS(retry_exports));
     var proto = exports2;
     proto.append = async function append(name, file, options) {
       options = options || {};
@@ -61064,7 +61072,7 @@ var require_base642 = __commonJS({
 // node_modules/ali-oss/lib/common/image/processObjectSave.js
 var require_processObjectSave = __commonJS({
   "node_modules/ali-oss/lib/common/image/processObjectSave.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
     var querystring = require("querystring");
     var {
       Base64: { encode: str2Base64 }
@@ -61116,7 +61124,7 @@ var require_image = __commonJS({
 // node_modules/ali-oss/lib/common/bucket/getBucketRequestPayment.js
 var require_getBucketRequestPayment = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/getBucketRequestPayment.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
     var proto = exports2;
     proto.getBucketRequestPayment = async function getBucketRequestPayment(bucketName, options) {
       options = options || {};
@@ -61137,8 +61145,8 @@ var require_getBucketRequestPayment = __commonJS({
 // node_modules/ali-oss/lib/common/bucket/putBucketRequestPayment.js
 var require_putBucketRequestPayment = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/putBucketRequestPayment.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
-    var { obj2xml: obj2xml2 } = (init_obj2xml(), obj2xml_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
+    var { obj2xml: obj2xml2 } = (init_obj2xml(), __toCommonJS(obj2xml_exports));
     var proto = exports2;
     var payerAll = ["BucketOwner", "Requester"];
     proto.putBucketRequestPayment = async function putBucketRequestPayment(bucketName, payer, options) {
@@ -61172,8 +61180,8 @@ var require_putBucketRequestPayment = __commonJS({
 var require_putBucketEncryption = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/putBucketEncryption.js"(exports2) {
     var proto = exports2;
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
-    var { obj2xml: obj2xml2 } = (init_obj2xml(), obj2xml_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
+    var { obj2xml: obj2xml2 } = (init_obj2xml(), __toCommonJS(obj2xml_exports));
     proto.putBucketEncryption = async function putBucketEncryption(bucketName, options) {
       options = options || {};
       _checkBucketName(bucketName);
@@ -61206,7 +61214,7 @@ var require_putBucketEncryption = __commonJS({
 // node_modules/ali-oss/lib/common/bucket/getBucketEncryption.js
 var require_getBucketEncryption = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/getBucketEncryption.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
     var proto = exports2;
     proto.getBucketEncryption = async function getBucketEncryption(bucketName) {
       _checkBucketName(bucketName);
@@ -61227,7 +61235,7 @@ var require_getBucketEncryption = __commonJS({
 // node_modules/ali-oss/lib/common/bucket/deleteBucketEncryption.js
 var require_deleteBucketEncryption = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/deleteBucketEncryption.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
     var proto = exports2;
     proto.deleteBucketEncryption = async function deleteBucketEncryption(bucketName) {
       _checkBucketName(bucketName);
@@ -61273,8 +61281,8 @@ var init_formatTag = __esm({
 var require_getBucketTags = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/getBucketTags.js"(exports2) {
     var proto = exports2;
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
-    var { formatTag: formatTag2 } = (init_formatTag(), formatTag_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
+    var { formatTag: formatTag2 } = (init_formatTag(), __toCommonJS(formatTag_exports));
     proto.getBucketTags = async function getBucketTags(name, options = {}) {
       _checkBucketName(name);
       const params = this._bucketRequestParams("GET", name, "tagging", options);
@@ -61298,8 +61306,8 @@ __export(checkBucketTag_exports, {
 var checkValid3, isObject3, commonRules2, rules2, checkBucketTag;
 var init_checkBucketTag = __esm({
   "node_modules/ali-oss/lib/common/utils/checkBucketTag.ts"() {
-    ({ checkValid: checkValid3 } = (init_checkValid(), checkValid_exports));
-    ({ isObject: isObject3 } = (init_isObject(), isObject_exports));
+    ({ checkValid: checkValid3 } = (init_checkValid(), __toCommonJS(checkValid_exports)));
+    ({ isObject: isObject3 } = (init_isObject(), __toCommonJS(isObject_exports)));
     commonRules2 = [
       {
         validator: (value) => {
@@ -61350,9 +61358,9 @@ var init_checkBucketTag = __esm({
 // node_modules/ali-oss/lib/common/bucket/putBucketTags.js
 var require_putBucketTags = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/putBucketTags.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
-    var { obj2xml: obj2xml2 } = (init_obj2xml(), obj2xml_exports);
-    var { checkBucketTag: checkBucketTag2 } = (init_checkBucketTag(), checkBucketTag_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
+    var { obj2xml: obj2xml2 } = (init_obj2xml(), __toCommonJS(obj2xml_exports));
+    var { checkBucketTag: checkBucketTag2 } = (init_checkBucketTag(), __toCommonJS(checkBucketTag_exports));
     var proto = exports2;
     proto.putBucketTags = async function putBucketTags(name, tag, options = {}) {
       _checkBucketName(name);
@@ -61384,7 +61392,7 @@ var require_putBucketTags = __commonJS({
 // node_modules/ali-oss/lib/common/bucket/deleteBucketTags.js
 var require_deleteBucketTags = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/deleteBucketTags.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
     var proto = exports2;
     proto.deleteBucketTags = async function deleteBucketTags(name, options = {}) {
       _checkBucketName(name);
@@ -61403,8 +61411,8 @@ var require_deleteBucketTags = __commonJS({
 var require_putBucket = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/putBucket.js"(exports2) {
     var proto = exports2;
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
-    var { obj2xml: obj2xml2 } = (init_obj2xml(), obj2xml_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
+    var { obj2xml: obj2xml2 } = (init_obj2xml(), __toCommonJS(obj2xml_exports));
     proto.putBucket = async function putBucket(name, options = {}) {
       _checkBucketName(name, true);
       const params = this._bucketRequestParams("PUT", name, "", options);
@@ -61436,8 +61444,8 @@ var require_putBucket = __commonJS({
 // node_modules/ali-oss/lib/common/bucket/getBucketWebsite.js
 var require_getBucketWebsite = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/getBucketWebsite.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
-    var { isObject: isObject4 } = (init_isObject(), isObject_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
+    var { isObject: isObject4 } = (init_isObject(), __toCommonJS(isObject_exports));
     var proto = exports2;
     proto.getBucketWebsite = async function getBucketWebsite(name, options) {
       _checkBucketName(name);
@@ -61468,9 +61476,9 @@ var require_getBucketWebsite = __commonJS({
 // node_modules/ali-oss/lib/common/bucket/putBucketWebsite.js
 var require_putBucketWebsite = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/putBucketWebsite.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
-    var { obj2xml: obj2xml2 } = (init_obj2xml(), obj2xml_exports);
-    var { isArray: isArray2 } = (init_isArray(), isArray_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
+    var { obj2xml: obj2xml2 } = (init_obj2xml(), __toCommonJS(obj2xml_exports));
+    var { isArray: isArray2 } = (init_isArray(), __toCommonJS(isArray_exports));
     var proto = exports2;
     proto.putBucketWebsite = async function putBucketWebsite(name, config = {}, options) {
       _checkBucketName(name);
@@ -61518,7 +61526,7 @@ var require_putBucketWebsite = __commonJS({
 // node_modules/ali-oss/lib/common/bucket/deleteBucketWebsite.js
 var require_deleteBucketWebsite = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/deleteBucketWebsite.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
     var proto = exports2;
     proto.deleteBucketWebsite = async function deleteBucketWebsite(name, options) {
       _checkBucketName(name);
@@ -61535,9 +61543,9 @@ var require_deleteBucketWebsite = __commonJS({
 // node_modules/ali-oss/lib/common/bucket/getBucketLifecycle.js
 var require_getBucketLifecycle = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/getBucketLifecycle.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
-    var { isArray: isArray2 } = (init_isArray(), isArray_exports);
-    var { formatObjKey: formatObjKey2 } = (init_formatObjKey(), formatObjKey_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
+    var { isArray: isArray2 } = (init_isArray(), __toCommonJS(isArray_exports));
+    var { formatObjKey: formatObjKey2 } = (init_formatObjKey(), __toCommonJS(formatObjKey_exports));
     var proto = exports2;
     proto.getBucketLifecycle = async function getBucketLifecycle(name, options) {
       _checkBucketName(name);
@@ -61641,13 +61649,13 @@ var init_getStrBytesCount = __esm({
 // node_modules/ali-oss/lib/common/bucket/putBucketLifecycle.js
 var require_putBucketLifecycle = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/putBucketLifecycle.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
-    var { isArray: isArray2 } = (init_isArray(), isArray_exports);
-    var { deepCopy: deepCopy2 } = (init_deepCopy(), deepCopy_exports);
-    var { isObject: isObject4 } = (init_isObject(), isObject_exports);
-    var { obj2xml: obj2xml2 } = (init_obj2xml(), obj2xml_exports);
-    var { checkObjectTag: checkObjectTag2 } = (init_checkObjectTag(), checkObjectTag_exports);
-    var { getStrBytesCount: getStrBytesCount2 } = (init_getStrBytesCount(), getStrBytesCount_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
+    var { isArray: isArray2 } = (init_isArray(), __toCommonJS(isArray_exports));
+    var { deepCopy: deepCopy2 } = (init_deepCopy(), __toCommonJS(deepCopy_exports));
+    var { isObject: isObject4 } = (init_isObject(), __toCommonJS(isObject_exports));
+    var { obj2xml: obj2xml2 } = (init_obj2xml(), __toCommonJS(obj2xml_exports));
+    var { checkObjectTag: checkObjectTag2 } = (init_checkObjectTag(), __toCommonJS(checkObjectTag_exports));
+    var { getStrBytesCount: getStrBytesCount2 } = (init_getStrBytesCount(), __toCommonJS(getStrBytesCount_exports));
     var proto = exports2;
     proto.putBucketLifecycle = async function putBucketLifecycle(name, rules3, options) {
       _checkBucketName(name);
@@ -61753,7 +61761,7 @@ var require_putBucketLifecycle = __commonJS({
 // node_modules/ali-oss/lib/common/bucket/deleteBucketLifecycle.js
 var require_deleteBucketLifecycle = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/deleteBucketLifecycle.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
     var proto = exports2;
     proto.deleteBucketLifecycle = async function deleteBucketLifecycle(name, options) {
       _checkBucketName(name);
@@ -61770,7 +61778,7 @@ var require_deleteBucketLifecycle = __commonJS({
 // node_modules/ali-oss/lib/common/bucket/getBucketPolicy.js
 var require_getBucketPolicy = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/getBucketPolicy.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
     var proto = exports2;
     proto.getBucketPolicy = async function getBucketPolicy(bucketName, options = {}) {
       _checkBucketName(bucketName);
@@ -61793,9 +61801,9 @@ var require_getBucketPolicy = __commonJS({
 // node_modules/ali-oss/lib/common/bucket/putBucketPolicy.js
 var require_putBucketPolicy = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/putBucketPolicy.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
-    var { policy2Str: policy2Str2 } = (init_policy2Str(), policy2Str_exports);
-    var { isObject: isObject4 } = (init_isObject(), isObject_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
+    var { policy2Str: policy2Str2 } = (init_policy2Str(), __toCommonJS(policy2Str_exports));
+    var { isObject: isObject4 } = (init_isObject(), __toCommonJS(isObject_exports));
     var proto = exports2;
     proto.putBucketPolicy = async function putBucketPolicy(bucketName, policy, options = {}) {
       _checkBucketName(bucketName);
@@ -61817,7 +61825,7 @@ var require_putBucketPolicy = __commonJS({
 // node_modules/ali-oss/lib/common/bucket/deleteBucketPolicy.js
 var require_deleteBucketPolicy = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/deleteBucketPolicy.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
     var proto = exports2;
     proto.deleteBucketPolicy = async function deleteBucketPolicy(bucketName, options = {}) {
       _checkBucketName(bucketName);
@@ -61835,7 +61843,7 @@ var require_deleteBucketPolicy = __commonJS({
 // node_modules/ali-oss/lib/common/bucket/getBucketVersioning.js
 var require_getBucketVersioning = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/getBucketVersioning.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
     var proto = exports2;
     proto.getBucketVersioning = async function getBucketVersioning(bucketName, options) {
       _checkBucketName(bucketName);
@@ -61856,8 +61864,8 @@ var require_getBucketVersioning = __commonJS({
 // node_modules/ali-oss/lib/common/bucket/putBucketVersioning.js
 var require_putBucketVersioning = __commonJS({
   "node_modules/ali-oss/lib/common/bucket/putBucketVersioning.js"(exports2) {
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
-    var { obj2xml: obj2xml2 } = (init_obj2xml(), obj2xml_exports);
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
+    var { obj2xml: obj2xml2 } = (init_obj2xml(), __toCommonJS(obj2xml_exports));
     var proto = exports2;
     proto.putBucketVersioning = async function putBucketVersioning(name, status, options = {}) {
       _checkBucketName(name);
@@ -62266,15 +62274,15 @@ var require_bucket = __commonJS({
     merge2(proto, require_deleteBucketPolicy());
     merge2(proto, require_getBucketVersioning());
     merge2(proto, require_putBucketVersioning());
-    merge2(proto, (init_getBucketInventory(), getBucketInventory_exports));
-    merge2(proto, (init_deleteBucketInventory(), deleteBucketInventory_exports));
-    merge2(proto, (init_listBucketInventory(), listBucketInventory_exports));
-    merge2(proto, (init_putBucketInventory(), putBucketInventory_exports));
-    merge2(proto, (init_abortBucketWorm(), abortBucketWorm_exports));
-    merge2(proto, (init_completeBucketWorm(), completeBucketWorm_exports));
-    merge2(proto, (init_extendBucketWorm(), extendBucketWorm_exports));
-    merge2(proto, (init_getBucketWorm(), getBucketWorm_exports));
-    merge2(proto, (init_initiateBucketWorm(), initiateBucketWorm_exports));
+    merge2(proto, (init_getBucketInventory(), __toCommonJS(getBucketInventory_exports)));
+    merge2(proto, (init_deleteBucketInventory(), __toCommonJS(deleteBucketInventory_exports)));
+    merge2(proto, (init_listBucketInventory(), __toCommonJS(listBucketInventory_exports)));
+    merge2(proto, (init_putBucketInventory(), __toCommonJS(putBucketInventory_exports)));
+    merge2(proto, (init_abortBucketWorm(), __toCommonJS(abortBucketWorm_exports)));
+    merge2(proto, (init_completeBucketWorm(), __toCommonJS(completeBucketWorm_exports)));
+    merge2(proto, (init_extendBucketWorm(), __toCommonJS(extendBucketWorm_exports)));
+    merge2(proto, (init_getBucketWorm(), __toCommonJS(getBucketWorm_exports)));
+    merge2(proto, (init_initiateBucketWorm(), __toCommonJS(initiateBucketWorm_exports)));
   }
 });
 
@@ -62282,9 +62290,9 @@ var require_bucket = __commonJS({
 var require_bucket2 = __commonJS({
   "node_modules/ali-oss/lib/bucket.js"(exports2) {
     var assert = require("assert");
-    var { isArray: isArray2 } = (init_isArray(), isArray_exports);
-    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), checkBucketName_exports);
-    var { formatTag: formatTag2 } = (init_formatTag(), formatTag_exports);
+    var { isArray: isArray2 } = (init_isArray(), __toCommonJS(isArray_exports));
+    var { checkBucketName: _checkBucketName } = (init_checkBucketName(), __toCommonJS(checkBucketName_exports));
+    var { formatTag: formatTag2 } = (init_formatTag(), __toCommonJS(formatTag_exports));
     var proto = exports2;
     function toArray(obj) {
       if (!obj) return [];
@@ -62605,10 +62613,10 @@ var require_managed_upload = __commonJS({
     var util = require("util");
     var path2 = require("path");
     var mime2 = require_mime();
-    var { isFile: isFile2 } = (init_isFile(), isFile_exports);
-    var { isArray: isArray2 } = (init_isArray(), isArray_exports);
-    var { isBuffer: isBuffer2 } = (init_isBuffer(), isBuffer_exports);
-    var { retry: retry2 } = (init_retry(), retry_exports);
+    var { isFile: isFile2 } = (init_isFile(), __toCommonJS(isFile_exports));
+    var { isArray: isArray2 } = (init_isArray(), __toCommonJS(isArray_exports));
+    var { isBuffer: isBuffer2 } = (init_isBuffer(), __toCommonJS(isBuffer_exports));
+    var { retry: retry2 } = (init_retry(), __toCommonJS(retry_exports));
     var proto = exports2;
     proto.multipartUpload = async function multipartUpload(name, file, options) {
       this.resetCancelFlag();
@@ -63414,7 +63422,7 @@ var require_multipart_copy = __commonJS({
 // node_modules/ali-oss/lib/common/parallel.js
 var require_parallel = __commonJS({
   "node_modules/ali-oss/lib/common/parallel.js"(exports2) {
-    var { isArray: isArray2 } = (init_isArray(), isArray_exports);
+    var { isArray: isArray2 } = (init_isArray(), __toCommonJS(isArray_exports));
     var proto = exports2;
     proto._parallelNode = async function _parallelNode(todo, parallel, fn2, sourceData) {
       const that = this;
@@ -63567,8 +63575,8 @@ var require_multipart = __commonJS({
   "node_modules/ali-oss/lib/common/multipart.js"(exports2) {
     var copy3 = require_copy_to();
     var callback = require_callback();
-    var { deepCopyWith: deepCopyWith2 } = (init_deepCopy(), deepCopy_exports);
-    var { isBuffer: isBuffer2 } = (init_isBuffer(), isBuffer_exports);
+    var { deepCopyWith: deepCopyWith2 } = (init_deepCopy(), __toCommonJS(deepCopy_exports));
+    var { isBuffer: isBuffer2 } = (init_isBuffer(), __toCommonJS(isBuffer_exports));
     var proto = exports2;
     proto.listUploads = async function listUploads(query, options) {
       options = options || {};
@@ -64261,12 +64269,12 @@ var require_client = __commonJS({
     var bowser = require_bowser();
     var signUtils = require_signUtils();
     var _initOptions = require_initOptions();
-    var { createRequest: createRequest2 } = (init_createRequest(), createRequest_exports);
-    var { encoder: encoder3 } = (init_encoder(), encoder_exports);
-    var { getReqUrl: getReqUrl3 } = (init_getReqUrl(), getReqUrl_exports);
-    var { setSTSToken: setSTSToken2 } = (init_setSTSToken(), setSTSToken_exports);
-    var { retry: retry2 } = (init_retry(), retry_exports);
-    var { isFunction: isFunction2 } = (init_isFunction(), isFunction_exports);
+    var { createRequest: createRequest2 } = (init_createRequest(), __toCommonJS(createRequest_exports));
+    var { encoder: encoder3 } = (init_encoder(), __toCommonJS(encoder_exports));
+    var { getReqUrl: getReqUrl3 } = (init_getReqUrl(), __toCommonJS(getReqUrl_exports));
+    var { setSTSToken: setSTSToken2 } = (init_setSTSToken(), __toCommonJS(setSTSToken_exports));
+    var { retry: retry2 } = (init_retry(), __toCommonJS(retry_exports));
+    var { isFunction: isFunction2 } = (init_isFunction(), __toCommonJS(isFunction_exports));
     var globalHttpAgent = new AgentKeepalive();
     var globalHttpsAgent = new HttpsAgentKeepalive();
     function Client(options, ctx) {
@@ -64487,10 +64495,10 @@ raw xml: ${message2}`;
 });
 
 // lib/main.js
-var import_core = __toModule(require_core());
-var import_glob = __toModule(require_glob());
-var import_ali_oss = __toModule(require_client());
-var import_path = __toModule(require("path"));
+var import_core = __toESM(require_core());
+var import_glob = __toESM(require_glob());
+var import_ali_oss = __toESM(require_client());
+var import_path = __toESM(require("path"));
 var processSlash = import_path.sep;
 var homeDir = (0, import_path.join)(process.cwd(), (0, import_core.getInput)("source"), processSlash);
 var credentials = {
@@ -64530,7 +64538,7 @@ var objectify = function transformFileToObject(filePath, baseName, prefix) {
     }
     (0, import_core.info)(`${index} files uploaded`);
   } catch (err) {
-    const { warning } = await Promise.resolve().then(() => __toModule(require_core()));
+    const { warning } = await Promise.resolve().then(() => __toESM(require_core()));
     warning(err.message);
   }
 })();
