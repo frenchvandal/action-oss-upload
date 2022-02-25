@@ -35,7 +35,7 @@
   "dependencies": {
     "@actions/core": "^1.6.0",
     "@actions/glob": "^0.2.0",
-    "ali-oss": "^6.16.0",
+    "ali-oss": "^6.17.1",
     "path": "^0.12.7"
   },
   "devDependencies": {
