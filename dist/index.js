@@ -2082,10 +2082,10 @@ var require_path_utils = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.toPlatformPath = exports.toWin32Path = exports.toPosixPath = void 0;
     var path2 = __importStar(require("path"));
-    function toPosixPath(pth) {
+    function toPosixPath2(pth) {
       return pth.replace(/[\\]/g, "/");
     }
-    exports.toPosixPath = toPosixPath;
+    exports.toPosixPath = toPosixPath2;
     function toWin32Path(pth) {
       return pth.replace(/[/]/g, "\\");
     }
@@ -74017,7 +74017,9 @@ var objectify = function transformFileToObject(filePath, baseName, prefix) {
     const forDeletion = baseName.split(processSlash);
     fileToObject = fileToObject.filter((item) => !forDeletion.includes(item));
   }
-  if (prefix) fileToObject.unshift(prefix);
+  if (prefix) {
+    fileToObject.unshift(prefix);
+  }
   const objectFile = fileToObject.join(import_path.posix.sep);
   return objectFile;
 };
@@ -74032,7 +74034,7 @@ var objectify = function transformFileToObject(filePath, baseName, prefix) {
     const size = (await uploadDir.glob()).length;
     (0, import_core.info)(`${size} files to upload`);
     for await (const file of localFiles) {
-      (0, import_core.info)(`${file} >> ${(0, import_path.relative)(homeDir, file).split(processSlash).join("/")}`);
+      (0, import_core.info)(`${file} >> ${(0, import_core.toPosixPath)((0, import_path.relative)(homeDir, file))}`);
       const objectName = objectify(file, homeDir);
       const response = await client.put(objectName, file);
       index += 1;

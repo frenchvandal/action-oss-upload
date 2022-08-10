@@ -1,4 +1,4 @@
-import { getInput, info } from '@actions/core';
+import { getInput, info, toPosixPath } from '@actions/core';
 import { create, Globber } from '@actions/glob';
 import OSS, { Options, PutObjectResult } from 'ali-oss';
 import { join, posix, relative, sep } from 'path';
@@ -28,7 +28,9 @@ const objectify = function transformFileToObject(
     fileToObject = fileToObject.filter((item) => !forDeletion.includes(item));
   }
 
-  if (prefix) fileToObject.unshift(prefix);
+  if (prefix) {
+    fileToObject.unshift(prefix);
+  }
 
   const objectFile: string = fileToObject.join(posix.sep);
 
@@ -50,9 +52,7 @@ const objectify = function transformFileToObject(
     info(`${size} files to upload`);
 
     for await (const file of localFiles) {
-      info(
-        `${file} >> ${relative(homeDir, file).split(processSlash).join('/')}`,
-      );
+      info(`${file} >> ${toPosixPath(relative(homeDir, file))}`);
 
       const objectName: string = objectify(file, homeDir);
 
