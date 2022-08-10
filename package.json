@@ -3,7 +3,7 @@
   "description": "This GitHub Action uploads generated files to an OSS bucket",
   "main": "dist/index.js",
   "engines": {
-    "node": ">=16.13.0",
+    "node": ">=16.16.0",
     "npm": ">=7.9.0"
   },
   "scripts": {
