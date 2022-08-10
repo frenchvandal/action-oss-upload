@@ -74002,8 +74002,7 @@ var import_core = __toESM(require_core());
 var import_glob = __toESM(require_glob());
 var import_ali_oss = __toESM(require_client());
 var import_path = require("path");
-var processSlash = import_path.sep;
-var homeDir = (0, import_path.join)(process.cwd(), (0, import_core.getInput)("source"), processSlash);
+var homeDir = (0, import_path.join)(process.cwd(), (0, import_core.getInput)("source"), import_path.sep);
 var credentials = {
   accessKeyId: (0, import_core.getInput)("accessKeyId", { required: true }),
   accessKeySecret: (0, import_core.getInput)("accessKeySecret", { required: true }),
@@ -74011,18 +74010,6 @@ var credentials = {
   region: (0, import_core.getInput)("region", { required: true })
 };
 var client = new import_ali_oss.default(credentials);
-var objectify = function transformFileToObject(filePath, baseName, prefix) {
-  let fileToObject = filePath.split(processSlash);
-  if (baseName) {
-    const forDeletion = baseName.split(processSlash);
-    fileToObject = fileToObject.filter((item) => !forDeletion.includes(item));
-  }
-  if (prefix) {
-    fileToObject.unshift(prefix);
-  }
-  const objectFile = fileToObject.join(import_path.posix.sep);
-  return objectFile;
-};
 (async () => {
   try {
     let index = 0;
@@ -74034,9 +74021,7 @@ var objectify = function transformFileToObject(filePath, baseName, prefix) {
     const size = (await uploadDir.glob()).length;
     (0, import_core.info)(`${size} files to upload`);
     for await (const file of localFiles) {
-      (0, import_core.info)(`${file} >> ${(0, import_core.toPosixPath)((0, import_path.relative)(homeDir, file))}`);
-      const objectName = objectify(file, homeDir);
-      const response = await client.put(objectName, file);
+      const response = await client.put((0, import_core.toPosixPath)((0, import_path.relative)(homeDir, file)), file);
       index += 1;
       percent = (index / size) * 100;
       (0, import_core.info)(`[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`);
