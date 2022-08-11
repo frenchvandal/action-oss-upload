@@ -1,4 +1,5 @@
 import { getInput, info, toPosixPath } from '@actions/core';
+import { exec } from '@actions/exec';
 import { create, Globber } from '@actions/glob';
 import OSS, { Options, PutObjectResult } from 'ali-oss';
 import { join, relative, sep } from 'path';
@@ -29,8 +30,6 @@ const client: OSS = new OSS(credentials);
     info(`${size} files to upload`);
 
     for await (const file of localFiles) {
-      /*info(`${file} >> ${toPosixPath(relative(homeDir, file))}`);*/
-
       const response: PutObjectResult = await client.put(
         toPosixPath(relative(homeDir, file)),
         file,
@@ -41,6 +40,18 @@ const client: OSS = new OSS(credentials);
 
       info(
         `[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`,
+      );
+
+      await exec(
+        `aliyun Cdn RefreshObjectCaches --ObjectPath https://frenchvandal.cn/${toPosixPath(
+          relative(homeDir, file),
+        )} --ObjectType file`,
+      );
+
+      await exec(
+        `aliyun Cdn PushObjectCache --ObjectPath https://frenchvandal.cn/${toPosixPath(
+          relative(homeDir, file),
+        )} --Area Global --L2Preload true`,
       );
     }
 
