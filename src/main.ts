@@ -51,7 +51,7 @@ const client: OSS = new OSS(credentials);
       await exec(
         `aliyun Cdn PushObjectCache --ObjectPath https://frenchvandal.cn/${toPosixPath(
           relative(homeDir, file),
-        )} --Area Global --L2Preload true`,
+        )} --Area overseas --L2Preload true`,
       );
     }
 

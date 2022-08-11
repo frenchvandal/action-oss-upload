@@ -75193,7 +75193,7 @@ var client = new import_ali_oss.default(credentials);
       await (0, import_exec.exec)(
         `aliyun Cdn PushObjectCache --ObjectPath https://frenchvandal.cn/${(0, import_core.toPosixPath)(
           (0, import_path.relative)(homeDir, file)
-        )} --Area Global --L2Preload true`
+        )} --Area overseas --L2Preload true`
       );
     }
     (0, import_core.info)(`${index} files uploaded`);
