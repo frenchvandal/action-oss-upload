@@ -41922,6 +41922,9 @@ Content-Type: image/png\r\n
             )} --Area overseas --L2Preload true`
           );
         }
+        const idToken = await (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.getIDToken)();
+        (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.info)("id token:");
+        (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(idToken);
         (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`${index} files uploaded`);
       } catch (err) {
         const { warning } = await Promise.resolve(/* import() */).then(

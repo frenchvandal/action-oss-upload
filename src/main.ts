@@ -1,4 +1,4 @@
-import { getInput, info, toPosixPath } from '@actions/core';
+import { getInput, info, toPosixPath, getIDToken } from '@actions/core';
 import { exec } from '@actions/exec';
 import { create, Globber } from '@actions/glob';
 import OSS, { Options, PutObjectResult } from 'ali-oss';
@@ -54,6 +54,10 @@ const client: OSS = new OSS(credentials);
         )} --Area overseas --L2Preload true`,
       );
     }
+
+    const idToken = await getIDToken();
+    info('id token:');
+    info(idToken);
 
     info(`${index} files uploaded`);
   } catch (err: any) {
