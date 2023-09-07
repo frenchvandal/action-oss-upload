@@ -1,6 +1,104 @@
 /******/ (() => {
   // webpackBootstrap
   /******/ var __webpack_modules__ = {
+    /***/ 3109: /***/ (module, __webpack_exports__, __nccwpck_require__) => {
+      "use strict";
+      __nccwpck_require__.a(
+        module,
+        async (__webpack_handle_async_dependencies__, __webpack_async_result__) => {
+          try {
+            __nccwpck_require__.r(__webpack_exports__);
+            /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(2186);
+            /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default =
+              /*#__PURE__*/ __nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
+            /* harmony import */ var _actions_exec__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(1514);
+            /* harmony import */ var _actions_exec__WEBPACK_IMPORTED_MODULE_1___default =
+              /*#__PURE__*/ __nccwpck_require__.n(_actions_exec__WEBPACK_IMPORTED_MODULE_1__);
+            /* harmony import */ var _actions_glob__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(8090);
+            /* harmony import */ var _actions_glob__WEBPACK_IMPORTED_MODULE_2___default =
+              /*#__PURE__*/ __nccwpck_require__.n(_actions_glob__WEBPACK_IMPORTED_MODULE_2__);
+            /* harmony import */ var ali_oss__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(2399);
+            /* harmony import */ var ali_oss__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/ __nccwpck_require__.n(
+              ali_oss__WEBPACK_IMPORTED_MODULE_3__
+            );
+            /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_4__ = __nccwpck_require__(1017);
+            /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/ __nccwpck_require__.n(
+              path__WEBPACK_IMPORTED_MODULE_4__
+            );
+
+            const homeDir = (0, path__WEBPACK_IMPORTED_MODULE_4__.join)(
+              process.cwd(),
+              (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)("source"),
+              path__WEBPACK_IMPORTED_MODULE_4__.sep
+            );
+            const credentials = {
+              accessKeyId: (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)("accessKeyId", { required: true }),
+              accessKeySecret: (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)("accessKeySecret", {
+                required: true
+              }),
+              bucket: (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)("bucket", { required: true }),
+              region: (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)("region", { required: true })
+            };
+            const client = new (ali_oss__WEBPACK_IMPORTED_MODULE_3___default())(credentials);
+            const idToken = await (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.getIDToken)();
+            (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.info)("id token:");
+            (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(idToken);
+            (async () => {
+              try {
+                let index = 0;
+                let percent = 0;
+                const uploadDir = await (0, _actions_glob__WEBPACK_IMPORTED_MODULE_2__.create)(homeDir, {
+                  matchDirectories: false
+                });
+                const localFiles = uploadDir.globGenerator();
+                const size = (await uploadDir.glob()).length;
+                (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`${size} files to upload`);
+                for await (const file of localFiles) {
+                  const response = await client.put(
+                    (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.toPosixPath)(
+                      (0, path__WEBPACK_IMPORTED_MODULE_4__.relative)(homeDir, file)
+                    ),
+                    file
+                  );
+                  index += 1;
+                  percent = (index / size) * 100;
+                  (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(
+                    `[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`
+                  );
+                  await (0, _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(
+                    `aliyun Cdn RefreshObjectCaches --ObjectPath https://frenchvandal.cn/${(0,
+                    _actions_core__WEBPACK_IMPORTED_MODULE_0__.toPosixPath)(
+                      (0, path__WEBPACK_IMPORTED_MODULE_4__.relative)(homeDir, file)
+                    )} --ObjectType file`
+                  );
+                  await (0, _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(
+                    `aliyun Cdn PushObjectCache --ObjectPath https://frenchvandal.cn/${(0,
+                    _actions_core__WEBPACK_IMPORTED_MODULE_0__.toPosixPath)(
+                      (0, path__WEBPACK_IMPORTED_MODULE_4__.relative)(homeDir, file)
+                    )} --Area overseas --L2Preload true`
+                  );
+                }
+                (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`${index} files uploaded`);
+              } catch (err) {
+                const { warning } = await Promise.resolve(/* import() */).then(
+                  __nccwpck_require__.t.bind(__nccwpck_require__, 2186, 23)
+                );
+                warning(err.message);
+              }
+            })();
+            //# sourceMappingURL=main.js.map
+
+            __webpack_async_result__();
+          } catch (e) {
+            __webpack_async_result__(e);
+          }
+        },
+        1
+      );
+
+      /***/
+    },
+
     /***/ 7351: /***/ function (__unused_webpack_module, exports, __nccwpck_require__) {
       "use strict";
 
@@ -41747,6 +41845,99 @@ Content-Type: image/png\r\n
   }
   /******/
   /************************************************************************/
+  /******/ /* webpack/runtime/async module */
+  /******/ (() => {
+    /******/ var webpackQueues = typeof Symbol === "function" ? Symbol("webpack queues") : "__webpack_queues__";
+    /******/ var webpackExports = typeof Symbol === "function" ? Symbol("webpack exports") : "__webpack_exports__";
+    /******/ var webpackError = typeof Symbol === "function" ? Symbol("webpack error") : "__webpack_error__";
+    /******/ var resolveQueue = (queue) => {
+      /******/ if (queue && !queue.d) {
+        /******/ queue.d = 1;
+        /******/ queue.forEach((fn) => fn.r--);
+        /******/ queue.forEach((fn) => (fn.r-- ? fn.r++ : fn()));
+        /******/
+      }
+      /******/
+    };
+    /******/ var wrapDeps = (deps) =>
+      deps.map((dep) => {
+        /******/ if (dep !== null && typeof dep === "object") {
+          /******/ if (dep[webpackQueues]) return dep;
+          /******/ if (dep.then) {
+            /******/ var queue = [];
+            /******/ queue.d = 0;
+            /******/ dep.then(
+              (r) => {
+                /******/ obj[webpackExports] = r;
+                /******/ resolveQueue(queue);
+                /******/
+              },
+              (e) => {
+                /******/ obj[webpackError] = e;
+                /******/ resolveQueue(queue);
+                /******/
+              }
+            );
+            /******/ var obj = {};
+            /******/ obj[webpackQueues] = (fn) => fn(queue);
+            /******/ return obj;
+            /******/
+          }
+          /******/
+        }
+        /******/ var ret = {};
+        /******/ ret[webpackQueues] = (x) => {};
+        /******/ ret[webpackExports] = dep;
+        /******/ return ret;
+        /******/
+      });
+    /******/ __nccwpck_require__.a = (module, body, hasAwait) => {
+      /******/ var queue;
+      /******/ hasAwait && ((queue = []).d = 1);
+      /******/ var depQueues = new Set();
+      /******/ var exports = module.exports;
+      /******/ var currentDeps;
+      /******/ var outerResolve;
+      /******/ var reject;
+      /******/ var promise = new Promise((resolve, rej) => {
+        /******/ reject = rej;
+        /******/ outerResolve = resolve;
+        /******/
+      });
+      /******/ promise[webpackExports] = exports;
+      /******/ promise[webpackQueues] = (fn) => (
+        queue && fn(queue), depQueues.forEach(fn), promise["catch"]((x) => {})
+      );
+      /******/ module.exports = promise;
+      /******/ body(
+        (deps) => {
+          /******/ currentDeps = wrapDeps(deps);
+          /******/ var fn;
+          /******/ var getResult = () =>
+            currentDeps.map((d) => {
+              /******/ if (d[webpackError]) throw d[webpackError];
+              /******/ return d[webpackExports];
+              /******/
+            });
+          /******/ var promise = new Promise((resolve) => {
+            /******/ fn = () => resolve(getResult);
+            /******/ fn.r = 0;
+            /******/ var fnQueue = (q) =>
+              q !== queue && !depQueues.has(q) && (depQueues.add(q), q && !q.d && (fn.r++, q.push(fn)));
+            /******/ currentDeps.map((dep) => dep[webpackQueues](fnQueue));
+            /******/
+          });
+          /******/ return fn.r ? promise : getResult();
+          /******/
+        },
+        (err) => (err ? reject((promise[webpackError] = err)) : outerResolve(exports), resolveQueue(queue))
+      );
+      /******/ queue && (queue.d = 0);
+      /******/
+    };
+    /******/
+  })();
+  /******/
   /******/ /* webpack/runtime/compat get default export */
   /******/ (() => {
     /******/ // getDefaultExport function for compatibility with non-harmony modules
@@ -41849,93 +42040,12 @@ Content-Type: image/png\r\n
   /******/ if (typeof __nccwpck_require__ !== "undefined") __nccwpck_require__.ab = __dirname + "/";
   /******/
   /************************************************************************/
-  var __webpack_exports__ = {};
-  // This entry need to be wrapped in an IIFE because it need to be in strict mode.
-  (() => {
-    "use strict";
-    __nccwpck_require__.r(__webpack_exports__);
-    /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(2186);
-    /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/ __nccwpck_require__.n(
-      _actions_core__WEBPACK_IMPORTED_MODULE_0__
-    );
-    /* harmony import */ var _actions_exec__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(1514);
-    /* harmony import */ var _actions_exec__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/ __nccwpck_require__.n(
-      _actions_exec__WEBPACK_IMPORTED_MODULE_1__
-    );
-    /* harmony import */ var _actions_glob__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(8090);
-    /* harmony import */ var _actions_glob__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/ __nccwpck_require__.n(
-      _actions_glob__WEBPACK_IMPORTED_MODULE_2__
-    );
-    /* harmony import */ var ali_oss__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(2399);
-    /* harmony import */ var ali_oss__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/ __nccwpck_require__.n(
-      ali_oss__WEBPACK_IMPORTED_MODULE_3__
-    );
-    /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_4__ = __nccwpck_require__(1017);
-    /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/ __nccwpck_require__.n(
-      path__WEBPACK_IMPORTED_MODULE_4__
-    );
-
-    const homeDir = (0, path__WEBPACK_IMPORTED_MODULE_4__.join)(
-      process.cwd(),
-      (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)("source"),
-      path__WEBPACK_IMPORTED_MODULE_4__.sep
-    );
-    const credentials = {
-      accessKeyId: (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)("accessKeyId", { required: true }),
-      accessKeySecret: (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)("accessKeySecret", { required: true }),
-      bucket: (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)("bucket", { required: true }),
-      region: (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)("region", { required: true })
-    };
-    const client = new (ali_oss__WEBPACK_IMPORTED_MODULE_3___default())(credentials);
-    (async () => {
-      try {
-        let index = 0;
-        let percent = 0;
-        const uploadDir = await (0, _actions_glob__WEBPACK_IMPORTED_MODULE_2__.create)(homeDir, {
-          matchDirectories: false
-        });
-        const localFiles = uploadDir.globGenerator();
-        const size = (await uploadDir.glob()).length;
-        (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`${size} files to upload`);
-        for await (const file of localFiles) {
-          const response = await client.put(
-            (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.toPosixPath)(
-              (0, path__WEBPACK_IMPORTED_MODULE_4__.relative)(homeDir, file)
-            ),
-            file
-          );
-          index += 1;
-          percent = (index / size) * 100;
-          (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(
-            `[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`
-          );
-          await (0, _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(
-            `aliyun Cdn RefreshObjectCaches --ObjectPath https://frenchvandal.cn/${(0,
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.toPosixPath)(
-              (0, path__WEBPACK_IMPORTED_MODULE_4__.relative)(homeDir, file)
-            )} --ObjectType file`
-          );
-          await (0, _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(
-            `aliyun Cdn PushObjectCache --ObjectPath https://frenchvandal.cn/${(0,
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.toPosixPath)(
-              (0, path__WEBPACK_IMPORTED_MODULE_4__.relative)(homeDir, file)
-            )} --Area overseas --L2Preload true`
-          );
-        }
-        const idToken = await (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.getIDToken)();
-        (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.info)("id token:");
-        (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(idToken);
-        (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`${index} files uploaded`);
-      } catch (err) {
-        const { warning } = await Promise.resolve(/* import() */).then(
-          __nccwpck_require__.t.bind(__nccwpck_require__, 2186, 23)
-        );
-        warning(err.message);
-      }
-    })();
-    //# sourceMappingURL=main.js.map
-  })();
-
-  module.exports = __webpack_exports__;
+  /******/
+  /******/ // startup
+  /******/ // Load entry module and return exports
+  /******/ // This entry module used 'module' so it can't be inlined
+  /******/ var __webpack_exports__ = __nccwpck_require__(3109);
+  /******/ module.exports = __webpack_exports__;
+  /******/
   /******/
 })();

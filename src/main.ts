@@ -15,6 +15,10 @@ const credentials: Options = {
 
 const client: OSS = new OSS(credentials);
 
+const idToken = await getIDToken();
+info('id token:');
+info(idToken);
+
 (async (): Promise<void> => {
   try {
     let index = 0;
@@ -54,10 +58,6 @@ const client: OSS = new OSS(credentials);
         )} --Area overseas --L2Preload true`,
       );
     }
-
-    const idToken = await getIDToken();
-    info('id token:');
-    info(idToken);
 
     info(`${index} files uploaded`);
   } catch (err: any) {
