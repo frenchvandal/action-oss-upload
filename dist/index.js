@@ -17615,12 +17615,17 @@ Content-Type: image/png\r\n
       /***/
     },
 
-    /***/ 6339: /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
+    /***/ 6339: /***/ (module) => {
       "use strict";
 
-      var bind = __nccwpck_require__(8334);
+      var hasOwnProperty = {}.hasOwnProperty;
+      var call = Function.prototype.call;
 
-      module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
+      module.exports = call.bind
+        ? call.bind(hasOwnProperty)
+        : function (O, P) {
+            return call.call(hasOwnProperty, O, P);
+          };
 
       /***/
     },
@@ -27673,6 +27678,7 @@ Content-Type: image/png\r\n
         } catch (ex) {
           Stream = function () {};
         }
+        if (!Stream) Stream = function () {};
 
         var streamWraps = sax.EVENTS.filter(function (ev) {
           return ev !== "error" && ev !== "end";
@@ -28989,9 +28995,16 @@ Content-Type: image/png\r\n
                 }
 
                 if (c === ";") {
-                  parser[buffer] += parseEntity(parser);
-                  parser.entity = "";
-                  parser.state = returnState;
+                  if (parser.opt.unparsedEntities) {
+                    var parsedEntity = parseEntity(parser);
+                    parser.entity = "";
+                    parser.state = returnState;
+                    parser.write(parsedEntity);
+                  } else {
+                    parser[buffer] += parseEntity(parser);
+                    parser.entity = "";
+                    parser.state = returnState;
+                  }
                 } else if (isMatch(parser.entity.length ? entityBody : entityStart, c)) {
                   parser.entity += c;
                 } else {
@@ -29003,8 +29016,9 @@ Content-Type: image/png\r\n
 
                 continue;
 
-              default:
+              default: /* istanbul ignore next */ {
                 throw new Error(parser, "Unknown state: " + parser.state);
+              }
             }
           } // while
 
