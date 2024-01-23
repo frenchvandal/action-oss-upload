@@ -66,16 +66,10 @@
                     `[${index}/${size}, ${percent.toFixed(2)}%] uploaded: ${response.name}`
                   );
                   await (0, _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(
-                    `aliyun Cdn RefreshObjectCaches --ObjectPath https://frenchvandal.cn/${(0,
-                    _actions_core__WEBPACK_IMPORTED_MODULE_0__.toPosixPath)(
-                      (0, path__WEBPACK_IMPORTED_MODULE_4__.relative)(homeDir, file)
-                    )} --ObjectType file`
+                    `aliyun Cdn RefreshObjectCaches --ObjectPath https://frenchvandal.cn/${(0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.toPosixPath)((0, path__WEBPACK_IMPORTED_MODULE_4__.relative)(homeDir, file))} --ObjectType file`
                   );
                   await (0, _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(
-                    `aliyun Cdn PushObjectCache --ObjectPath https://frenchvandal.cn/${(0,
-                    _actions_core__WEBPACK_IMPORTED_MODULE_0__.toPosixPath)(
-                      (0, path__WEBPACK_IMPORTED_MODULE_4__.relative)(homeDir, file)
-                    )} --Area overseas --L2Preload true`
+                    `aliyun Cdn PushObjectCache --ObjectPath https://frenchvandal.cn/${(0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.toPosixPath)((0, path__WEBPACK_IMPORTED_MODULE_4__.relative)(homeDir, file))} --Area overseas --L2Preload true`
                   );
                 }
                 (0, _actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`${index} files uploaded`);
@@ -2071,9 +2065,7 @@
           if (!state.processClosed && state.processExited) {
             const message = `The STDIO streams did not close within ${
               state.delay / 1000
-            } seconds of the exit event from process '${
-              state.toolPath
-            }'. This may indicate a child process inherited the STDIO streams and has not yet exited.`;
+            } seconds of the exit event from process '${state.toolPath}'. This may indicate a child process inherited the STDIO streams and has not yet exited.`;
             state._debug(message);
           }
           state._setResult();
@@ -3620,9 +3612,8 @@
           if (!options.headers) {
             throw Error("The request has no headers");
           }
-          options.headers["Authorization"] = `Basic ${Buffer.from(`${this.username}:${this.password}`).toString(
-            "base64"
-          )}`;
+          options.headers["Authorization"] =
+            `Basic ${Buffer.from(`${this.username}:${this.password}`).toString("base64")}`;
         }
         // This handler cannot handle 401
         canHandleAuthentication() {
@@ -6307,6 +6298,7 @@
           method,
           bucket,
           subres,
+          additionalHeaders: options && options.additionalHeaders,
           timeout: options && options.timeout,
           ctx: options && options.ctx
         };
@@ -6335,6 +6327,7 @@
       const { setSTSToken } = __nccwpck_require__(4622);
       const { retry } = __nccwpck_require__(8263);
       const { isFunction } = __nccwpck_require__(8818);
+      const { getStandardRegion } = __nccwpck_require__(8423);
 
       const globalHttpAgent = new AgentKeepalive();
       const globalHttpsAgent = new HttpsAgentKeepalive();
@@ -6471,6 +6464,40 @@
           this.options.accessKeyId,
           this.options.accessKeySecret,
           stringToSign,
+          this.options.headerEncoding
+        );
+      };
+
+      /**
+       * get authorization header v4
+       *
+       * @param {string} method
+       * @param {Object} requestParams
+       * @param {Object} requestParams.headers
+       * @param {Object} [requestParams.queries]
+       * @param {string} [bucketName]
+       * @param {string} [objectName]
+       * @param {string[]} [additionalHeaders]
+       * @return {string}
+       *
+       * @api private
+       */
+      proto.authorizationV4 = function authorizationV4(
+        method,
+        requestParams,
+        bucketName,
+        objectName,
+        additionalHeaders
+      ) {
+        return signUtils.authorizationV4(
+          this.options.accessKeyId,
+          this.options.accessKeySecret,
+          getStandardRegion(this.options.region),
+          method,
+          requestParams,
+          bucketName,
+          objectName,
+          additionalHeaders,
           this.options.headerEncoding
         );
       };
@@ -8189,7 +8216,8 @@
             headerEncoding: "utf-8",
             refreshSTSToken: null,
             refreshSTSTokenInterval: 60000 * 5,
-            retryMax: 0
+            retryMax: 0,
+            authorizationV4: false // 启用v4签名，默认关闭
           },
           options
         );
@@ -8302,9 +8330,7 @@
         const versionId = options.versionId || (options.subres && options.subres.versionId) || null;
         let copySource;
         if (versionId) {
-          copySource = `/${sourceData.sourceBucketName}/${encodeURIComponent(
-            sourceData.sourceKey
-          )}?versionId=${versionId}`;
+          copySource = `/${sourceData.sourceBucketName}/${encodeURIComponent(sourceData.sourceKey)}?versionId=${versionId}`;
         } else {
           copySource = `/${sourceData.sourceBucketName}/${encodeURIComponent(sourceData.sourceKey)}`;
         }
@@ -9560,6 +9586,7 @@
       merge(proto, __nccwpck_require__(5633));
       merge(proto, __nccwpck_require__(3252));
       merge(proto, __nccwpck_require__(7330));
+      merge(proto, __nccwpck_require__(4598));
 
       /***/
     },
@@ -9789,6 +9816,86 @@
       /***/
     },
 
+    /***/ 4598: /***/ (__unused_webpack_module, exports, __nccwpck_require__) => {
+      const dateFormat = __nccwpck_require__(1512);
+      const urlUtil = __nccwpck_require__(7310);
+
+      const signHelper = __nccwpck_require__(5150);
+      const { setSTSToken } = __nccwpck_require__(4622);
+      const { isFunction } = __nccwpck_require__(8818);
+      const { getStandardRegion } = __nccwpck_require__(8423);
+
+      const proto = exports;
+
+      /**
+       * signatureUrlV4
+       *
+       * @param {string} method
+       * @param {number} expires
+       * @param {Object} [request]
+       * @param {Object} [request.headers]
+       * @param {Object} [request.queries]
+       * @param {string} [objectName]
+       * @param {string[]} [additionalHeaders]
+       */
+      proto.signatureUrlV4 = async function signatureUrlV4(method, expires, request, objectName, additionalHeaders) {
+        const headers = (request && request.headers) || {};
+        const queries = { ...((request && request.queries) || {}) };
+        const date = new Date();
+        const formattedDate = dateFormat(date, "UTC:yyyymmdd'T'HHMMss'Z'");
+        const onlyDate = formattedDate.split("T")[0];
+        const fixedAdditionalHeaders = signHelper.fixAdditionalHeaders(additionalHeaders);
+        const region = getStandardRegion(this.options.region);
+
+        if (fixedAdditionalHeaders.length > 0) {
+          queries["x-oss-additional-headers"] = fixedAdditionalHeaders.join(";");
+        }
+        queries["x-oss-credential"] = `${this.options.accessKeyId}/${onlyDate}/${region}/oss/aliyun_v4_request`;
+        queries["x-oss-date"] = formattedDate;
+        queries["x-oss-expires"] = expires;
+        queries["x-oss-signature-version"] = "OSS4-HMAC-SHA256";
+
+        if (this.options.stsToken && isFunction(this.options.refreshSTSToken)) {
+          await setSTSToken.call(this);
+        }
+
+        if (this.options.stsToken) {
+          queries["x-oss-security-token"] = this.options.stsToken;
+        }
+
+        const canonicalRequest = signHelper.getCanonicalRequest(
+          method,
+          {
+            headers,
+            queries
+          },
+          this.options.bucket,
+          objectName,
+          fixedAdditionalHeaders
+        );
+        const stringToSign = signHelper.getStringToSign(region, formattedDate, canonicalRequest);
+
+        queries["x-oss-signature"] = signHelper.getSignatureV4(
+          this.options.accessKeySecret,
+          onlyDate,
+          region,
+          stringToSign
+        );
+
+        const signedUrl = urlUtil.parse(
+          this._getReqUrl({
+            bucket: this.options.bucket,
+            object: objectName
+          })
+        );
+        signedUrl.query = { ...queries };
+
+        return signedUrl.format();
+      };
+
+      /***/
+    },
+
     /***/ 986: /***/ (__unused_webpack_module, exports, __nccwpck_require__) => {
       const { isArray } = __nccwpck_require__(1954);
 
@@ -9974,7 +10081,9 @@
     /***/ 5150: /***/ (__unused_webpack_module, exports, __nccwpck_require__) => {
       const crypto = __nccwpck_require__(6113);
       const is = __nccwpck_require__(5565);
+      const qs = __nccwpck_require__(2760);
       const { lowercaseKeyHeader } = __nccwpck_require__(5285);
+      const { encodeString } = __nccwpck_require__(7563);
 
       /**
        *
@@ -10070,6 +10179,184 @@
        */
       exports.authorization = function authorization(accessKeyId, accessKeySecret, canonicalString, headerEncoding) {
         return `OSS ${accessKeyId}:${this.computeSignature(accessKeySecret, canonicalString, headerEncoding)}`;
+      };
+
+      /**
+       * @param {string[]} [additionalHeaders]
+       * @returns {string[]}
+       */
+      exports.fixAdditionalHeaders = (additionalHeaders) => {
+        if (!additionalHeaders) {
+          return [];
+        }
+
+        const OSS_PREFIX = "x-oss-";
+
+        return [...new Set(additionalHeaders.map((v) => v.toLowerCase()))]
+          .filter((v) => {
+            return v !== "content-type" && v !== "content-md5" && !v.startsWith(OSS_PREFIX);
+          })
+          .sort();
+      };
+
+      /**
+       * @param {string} method
+       * @param {Object} request
+       * @param {Object} request.headers
+       * @param {Object} [request.queries]
+       * @param {string} [bucketName]
+       * @param {string} [objectName]
+       * @param {string[]} [additionalHeaders] additional headers after deduplication, lowercase and sorting
+       * @returns {string}
+       */
+      exports.getCanonicalRequest = function getCanonicalRequest(
+        method,
+        request,
+        bucketName,
+        objectName,
+        additionalHeaders
+      ) {
+        const headers = lowercaseKeyHeader(request.headers);
+        const queries = request.queries || {};
+        const OSS_PREFIX = "x-oss-";
+
+        if (objectName && !bucketName) {
+          throw Error("Please ensure that bucketName is passed into getCanonicalRequest.");
+        }
+
+        const signContent = [
+          method.toUpperCase(), // HTTP Verb
+          encodeString(`/${bucketName ? `${bucketName}/` : ""}${objectName || ""}`).replace(/%2F/g, "/") // Canonical URI
+        ];
+
+        // Canonical Query String
+        signContent.push(
+          qs.stringify(queries, {
+            encoder: encodeString,
+            sort: (a, b) => a.localeCompare(b),
+            strictNullHandling: true
+          })
+        );
+
+        // Canonical Headers
+        if (additionalHeaders) {
+          additionalHeaders.forEach((v) => {
+            if (!Object.prototype.hasOwnProperty.call(headers, v)) {
+              throw Error(`Can't find additional header ${v} in request headers.`);
+            }
+          });
+        }
+
+        const tempHeaders = new Set(additionalHeaders);
+
+        Object.keys(headers).forEach((v) => {
+          if (v === "content-type" || v === "content-md5" || v.startsWith(OSS_PREFIX)) {
+            tempHeaders.add(v);
+          }
+        });
+
+        const canonicalHeaders = `${[...tempHeaders]
+          .sort()
+          .map((v) => `${v}:${is.string(headers[v]) ? headers[v].trim() : headers[v]}\n`)
+          .join("")}`;
+
+        signContent.push(canonicalHeaders);
+
+        // Additional Headers
+        if (additionalHeaders.length > 0) {
+          signContent.push(additionalHeaders.join(";"));
+        } else {
+          signContent.push("");
+        }
+
+        // Hashed Payload
+        signContent.push(headers["x-oss-content-sha256"] || "UNSIGNED-PAYLOAD");
+
+        return signContent.join("\n");
+      };
+
+      /**
+       * @param {string} region Standard region, e.g. cn-hangzhou
+       * @param {string} date ISO8601 UTC:yyyymmdd'T'HHMMss'Z'
+       * @param {string} canonicalRequest
+       * @returns {string}
+       */
+      exports.getStringToSign = function getStringToSign(region, date, canonicalRequest) {
+        const stringToSign = [
+          "OSS4-HMAC-SHA256",
+          date, // TimeStamp
+          `${date.split("T")[0]}/${region}/oss/aliyun_v4_request`, // Scope
+          crypto.createHash("sha256").update(canonicalRequest).digest("hex") // Hashed Canonical Request
+        ];
+
+        return stringToSign.join("\n");
+      };
+
+      /**
+       * @param {String} accessKeySecret
+       * @param {string} date yyyymmdd
+       * @param {string} region Standard region, e.g. cn-hangzhou
+       * @param {string} stringToSign
+       * @returns {string}
+       */
+      exports.getSignatureV4 = function getSignatureV4(accessKeySecret, date, region, stringToSign) {
+        const signingDate = crypto.createHmac("sha256", `aliyun_v4${accessKeySecret}`).update(date).digest();
+        const signingRegion = crypto.createHmac("sha256", signingDate).update(region).digest();
+        const signingOss = crypto.createHmac("sha256", signingRegion).update("oss").digest();
+        const signingKey = crypto.createHmac("sha256", signingOss).update("aliyun_v4_request").digest();
+        const signatureValue = crypto.createHmac("sha256", signingKey).update(stringToSign).digest("hex");
+
+        return signatureValue;
+      };
+
+      /**
+       * @param {String} accessKeyId
+       * @param {String} accessKeySecret
+       * @param {string} region Standard region, e.g. cn-hangzhou
+       * @param {string} method
+       * @param {Object} request
+       * @param {Object} request.headers
+       * @param {Object} [request.queries]
+       * @param {string} [bucketName]
+       * @param {string} [objectName]
+       * @param {string[]} [additionalHeaders]
+       * @param {string} [headerEncoding='utf-8']
+       * @returns {string}
+       */
+      exports.authorizationV4 = function authorizationV4(
+        accessKeyId,
+        accessKeySecret,
+        region,
+        method,
+        request,
+        bucketName,
+        objectName,
+        additionalHeaders,
+        headerEncoding = "utf-8"
+      ) {
+        const fixedAdditionalHeaders = this.fixAdditionalHeaders(additionalHeaders);
+        const fixedHeaders = {};
+        Object.entries(request.headers).forEach((v) => {
+          fixedHeaders[v[0]] = is.string(v[1]) ? Buffer.from(v[1], headerEncoding).toString() : v[1];
+        });
+        const date = fixedHeaders["x-oss-date"] || (request.queries && request.queries["x-oss-date"]);
+        const canonicalRequest = this.getCanonicalRequest(
+          method,
+          {
+            headers: fixedHeaders,
+            queries: request.queries
+          },
+          bucketName,
+          objectName,
+          fixedAdditionalHeaders
+        );
+        const stringToSign = this.getStringToSign(region, date, canonicalRequest);
+        const onlyDate = date.split("T")[0];
+        const signatureValue = this.getSignatureV4(accessKeySecret, onlyDate, region, stringToSign);
+        const additionalHeadersValue =
+          fixedAdditionalHeaders.length > 0 ? `AdditionalHeaders=${fixedAdditionalHeaders.join(";")},` : "";
+
+        return `OSS4-HMAC-SHA256 Credential=${accessKeyId}/${onlyDate}/${region}/oss/aliyun_v4_request,${additionalHeadersValue}Signature=${signatureValue}`;
       };
 
       /**
@@ -10364,6 +10651,9 @@
       exports.createRequest = void 0;
       const crypto = __nccwpck_require__(6113);
       const debug = __nccwpck_require__(8237)("ali-oss");
+      const _isString = __nccwpck_require__(5704);
+      const _isArray = __nccwpck_require__(4869);
+      const _isObject = __nccwpck_require__(3334);
       const mime = __nccwpck_require__(9994);
       const dateFormat = __nccwpck_require__(1512);
       const copy = __nccwpck_require__(952);
@@ -10386,8 +10676,14 @@
           date = +new Date() + this.options.amendTimeSkewed;
         }
         const headers = {
-          "x-oss-date": dateFormat(date, "UTC:ddd, dd mmm yyyy HH:MM:ss 'GMT'")
+          "x-oss-date": dateFormat(
+            date,
+            this.options.authorizationV4 ? "UTC:yyyymmdd'T'HHMMss'Z'" : "UTC:ddd, dd mmm yyyy HH:MM:ss 'GMT'"
+          )
         };
+        if (this.options.authorizationV4) {
+          headers["x-oss-content-sha256"] = "UNSIGNED-PAYLOAD";
+        }
         if (typeof window !== "undefined") {
           headers["x-oss-user-agent"] = this.userAgent;
         }
@@ -10434,14 +10730,41 @@
             headers[k] = encoder(String(headers[k]), this.options.headerEncoding);
           }
         }
-        const authResource = this._getResource(params);
-        headers.authorization = this.authorization(
-          params.method,
-          authResource,
-          params.subres,
-          headers,
-          this.options.headerEncoding
-        );
+        const queries = {};
+        if (_isString(params.subres)) {
+          queries[params.subres] = null;
+        } else if (_isArray(params.subres)) {
+          params.subres.forEach((v) => {
+            queries[v] = null;
+          });
+        } else if (_isObject(params.subres)) {
+          Object.entries(params.subres).forEach((v) => {
+            queries[v[0]] = v[1] === "" ? null : v[1];
+          });
+        }
+        if (_isObject(params.query)) {
+          Object.entries(params.query).forEach((v) => {
+            queries[v[0]] = v[1];
+          });
+        }
+        headers.authorization = this.options.authorizationV4
+          ? this.authorizationV4(
+              params.method,
+              {
+                headers,
+                queries
+              },
+              params.bucket,
+              params.object,
+              params.additionalHeaders
+            )
+          : this.authorization(
+              params.method,
+              this._getResource(params),
+              params.subres,
+              headers,
+              this.options.headerEncoding
+            );
         // const url = this._getReqUrl(params);
         if (isIP(this.options.endpoint.hostname)) {
           const { region, internal, secure } = this.options;
@@ -10586,6 +10909,26 @@
       /***/
     },
 
+    /***/ 7563: /***/ function (__unused_webpack_module, exports, __nccwpck_require__) {
+      "use strict";
+
+      var __importDefault =
+        (this && this.__importDefault) ||
+        function (mod) {
+          return mod && mod.__esModule ? mod : { default: mod };
+        };
+      Object.defineProperty(exports, "__esModule", { value: true });
+      exports.encodeString = void 0;
+      const toString_1 = __importDefault(__nccwpck_require__(2931));
+      function encodeString(str) {
+        const tempStr = toString_1.default(str);
+        return encodeURIComponent(tempStr).replace(/[!'()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+      }
+      exports.encodeString = encodeString;
+
+      /***/
+    },
+
     /***/ 3240: /***/ (__unused_webpack_module, exports) => {
       "use strict";
 
@@ -10715,6 +11058,19 @@
         return tag;
       }
       exports.formatTag = formatTag;
+
+      /***/
+    },
+
+    /***/ 8423: /***/ (__unused_webpack_module, exports) => {
+      "use strict";
+
+      Object.defineProperty(exports, "__esModule", { value: true });
+      exports.getStandardRegion = void 0;
+      function getStandardRegion(str) {
+        return str.replace(/^oss-/g, "");
+      }
+      exports.getStandardRegion = getStandardRegion;
 
       /***/
     },
@@ -11952,6 +12308,7 @@
           bucket: this.options.bucket,
           method,
           subres: options && options.subres,
+          additionalHeaders: options && options.additionalHeaders,
           timeout: options && options.timeout,
           ctx: options && options.ctx
         };
@@ -18063,8 +18420,7 @@ Content-Type: image/png\r\n
         var bucket = this._getEncodeBucket(uCode);
         var low = uCode & 0xff;
         if (bucket[low] <= SEQ_START)
-          this.encodeTableSeq[SEQ_START - bucket[low]][DEF_CHAR] =
-            dbcsCode; // There's already a sequence, set a single-char subsequence of it.
+          this.encodeTableSeq[SEQ_START - bucket[low]][DEF_CHAR] = dbcsCode; // There's already a sequence, set a single-char subsequence of it.
         else if (bucket[low] == UNASSIGNED) bucket[low] = dbcsCode;
       };
 
@@ -22042,6 +22398,418 @@ Content-Type: image/png\r\n
           _exports.default = _default;
         }
       );
+
+      /***/
+    },
+
+    /***/ 9213: /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
+      var root = __nccwpck_require__(9882);
+
+      /** Built-in value references. */
+      var Symbol = root.Symbol;
+
+      module.exports = Symbol;
+
+      /***/
+    },
+
+    /***/ 4356: /***/ (module) => {
+      /**
+       * A specialized version of `_.map` for arrays without support for iteratee
+       * shorthands.
+       *
+       * @private
+       * @param {Array} [array] The array to iterate over.
+       * @param {Function} iteratee The function invoked per iteration.
+       * @returns {Array} Returns the new mapped array.
+       */
+      function arrayMap(array, iteratee) {
+        var index = -1,
+          length = array == null ? 0 : array.length,
+          result = Array(length);
+
+        while (++index < length) {
+          result[index] = iteratee(array[index], index, array);
+        }
+        return result;
+      }
+
+      module.exports = arrayMap;
+
+      /***/
+    },
+
+    /***/ 7497: /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
+      var Symbol = __nccwpck_require__(9213),
+        getRawTag = __nccwpck_require__(923),
+        objectToString = __nccwpck_require__(4200);
+
+      /** `Object#toString` result references. */
+      var nullTag = "[object Null]",
+        undefinedTag = "[object Undefined]";
+
+      /** Built-in value references. */
+      var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
+
+      /**
+       * The base implementation of `getTag` without fallbacks for buggy environments.
+       *
+       * @private
+       * @param {*} value The value to query.
+       * @returns {string} Returns the `toStringTag`.
+       */
+      function baseGetTag(value) {
+        if (value == null) {
+          return value === undefined ? undefinedTag : nullTag;
+        }
+        return symToStringTag && symToStringTag in Object(value) ? getRawTag(value) : objectToString(value);
+      }
+
+      module.exports = baseGetTag;
+
+      /***/
+    },
+
+    /***/ 6792: /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
+      var Symbol = __nccwpck_require__(9213),
+        arrayMap = __nccwpck_require__(4356),
+        isArray = __nccwpck_require__(4869),
+        isSymbol = __nccwpck_require__(6403);
+
+      /** Used as references for various `Number` constants. */
+      var INFINITY = 1 / 0;
+
+      /** Used to convert symbols to primitives and strings. */
+      var symbolProto = Symbol ? Symbol.prototype : undefined,
+        symbolToString = symbolProto ? symbolProto.toString : undefined;
+
+      /**
+       * The base implementation of `_.toString` which doesn't convert nullish
+       * values to empty strings.
+       *
+       * @private
+       * @param {*} value The value to process.
+       * @returns {string} Returns the string.
+       */
+      function baseToString(value) {
+        // Exit early for strings to avoid a performance hit in some environments.
+        if (typeof value == "string") {
+          return value;
+        }
+        if (isArray(value)) {
+          // Recursively convert values (susceptible to call stack limits).
+          return arrayMap(value, baseToString) + "";
+        }
+        if (isSymbol(value)) {
+          return symbolToString ? symbolToString.call(value) : "";
+        }
+        var result = value + "";
+        return result == "0" && 1 / value == -INFINITY ? "-0" : result;
+      }
+
+      module.exports = baseToString;
+
+      /***/
+    },
+
+    /***/ 2085: /***/ (module) => {
+      /** Detect free variable `global` from Node.js. */
+      var freeGlobal = typeof global == "object" && global && global.Object === Object && global;
+
+      module.exports = freeGlobal;
+
+      /***/
+    },
+
+    /***/ 923: /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
+      var Symbol = __nccwpck_require__(9213);
+
+      /** Used for built-in method references. */
+      var objectProto = Object.prototype;
+
+      /** Used to check objects for own properties. */
+      var hasOwnProperty = objectProto.hasOwnProperty;
+
+      /**
+       * Used to resolve the
+       * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+       * of values.
+       */
+      var nativeObjectToString = objectProto.toString;
+
+      /** Built-in value references. */
+      var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
+
+      /**
+       * A specialized version of `baseGetTag` which ignores `Symbol.toStringTag` values.
+       *
+       * @private
+       * @param {*} value The value to query.
+       * @returns {string} Returns the raw `toStringTag`.
+       */
+      function getRawTag(value) {
+        var isOwn = hasOwnProperty.call(value, symToStringTag),
+          tag = value[symToStringTag];
+
+        try {
+          value[symToStringTag] = undefined;
+          var unmasked = true;
+        } catch (e) {}
+
+        var result = nativeObjectToString.call(value);
+        if (unmasked) {
+          if (isOwn) {
+            value[symToStringTag] = tag;
+          } else {
+            delete value[symToStringTag];
+          }
+        }
+        return result;
+      }
+
+      module.exports = getRawTag;
+
+      /***/
+    },
+
+    /***/ 4200: /***/ (module) => {
+      /** Used for built-in method references. */
+      var objectProto = Object.prototype;
+
+      /**
+       * Used to resolve the
+       * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+       * of values.
+       */
+      var nativeObjectToString = objectProto.toString;
+
+      /**
+       * Converts `value` to a string using `Object.prototype.toString`.
+       *
+       * @private
+       * @param {*} value The value to convert.
+       * @returns {string} Returns the converted string.
+       */
+      function objectToString(value) {
+        return nativeObjectToString.call(value);
+      }
+
+      module.exports = objectToString;
+
+      /***/
+    },
+
+    /***/ 9882: /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
+      var freeGlobal = __nccwpck_require__(2085);
+
+      /** Detect free variable `self`. */
+      var freeSelf = typeof self == "object" && self && self.Object === Object && self;
+
+      /** Used as a reference to the global object. */
+      var root = freeGlobal || freeSelf || Function("return this")();
+
+      module.exports = root;
+
+      /***/
+    },
+
+    /***/ 4869: /***/ (module) => {
+      /**
+       * Checks if `value` is classified as an `Array` object.
+       *
+       * @static
+       * @memberOf _
+       * @since 0.1.0
+       * @category Lang
+       * @param {*} value The value to check.
+       * @returns {boolean} Returns `true` if `value` is an array, else `false`.
+       * @example
+       *
+       * _.isArray([1, 2, 3]);
+       * // => true
+       *
+       * _.isArray(document.body.children);
+       * // => false
+       *
+       * _.isArray('abc');
+       * // => false
+       *
+       * _.isArray(_.noop);
+       * // => false
+       */
+      var isArray = Array.isArray;
+
+      module.exports = isArray;
+
+      /***/
+    },
+
+    /***/ 3334: /***/ (module) => {
+      /**
+       * Checks if `value` is the
+       * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+       * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+       *
+       * @static
+       * @memberOf _
+       * @since 0.1.0
+       * @category Lang
+       * @param {*} value The value to check.
+       * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+       * @example
+       *
+       * _.isObject({});
+       * // => true
+       *
+       * _.isObject([1, 2, 3]);
+       * // => true
+       *
+       * _.isObject(_.noop);
+       * // => true
+       *
+       * _.isObject(null);
+       * // => false
+       */
+      function isObject(value) {
+        var type = typeof value;
+        return value != null && (type == "object" || type == "function");
+      }
+
+      module.exports = isObject;
+
+      /***/
+    },
+
+    /***/ 5926: /***/ (module) => {
+      /**
+       * Checks if `value` is object-like. A value is object-like if it's not `null`
+       * and has a `typeof` result of "object".
+       *
+       * @static
+       * @memberOf _
+       * @since 4.0.0
+       * @category Lang
+       * @param {*} value The value to check.
+       * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+       * @example
+       *
+       * _.isObjectLike({});
+       * // => true
+       *
+       * _.isObjectLike([1, 2, 3]);
+       * // => true
+       *
+       * _.isObjectLike(_.noop);
+       * // => false
+       *
+       * _.isObjectLike(null);
+       * // => false
+       */
+      function isObjectLike(value) {
+        return value != null && typeof value == "object";
+      }
+
+      module.exports = isObjectLike;
+
+      /***/
+    },
+
+    /***/ 5704: /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
+      var baseGetTag = __nccwpck_require__(7497),
+        isArray = __nccwpck_require__(4869),
+        isObjectLike = __nccwpck_require__(5926);
+
+      /** `Object#toString` result references. */
+      var stringTag = "[object String]";
+
+      /**
+       * Checks if `value` is classified as a `String` primitive or object.
+       *
+       * @static
+       * @since 0.1.0
+       * @memberOf _
+       * @category Lang
+       * @param {*} value The value to check.
+       * @returns {boolean} Returns `true` if `value` is a string, else `false`.
+       * @example
+       *
+       * _.isString('abc');
+       * // => true
+       *
+       * _.isString(1);
+       * // => false
+       */
+      function isString(value) {
+        return typeof value == "string" || (!isArray(value) && isObjectLike(value) && baseGetTag(value) == stringTag);
+      }
+
+      module.exports = isString;
+
+      /***/
+    },
+
+    /***/ 6403: /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
+      var baseGetTag = __nccwpck_require__(7497),
+        isObjectLike = __nccwpck_require__(5926);
+
+      /** `Object#toString` result references. */
+      var symbolTag = "[object Symbol]";
+
+      /**
+       * Checks if `value` is classified as a `Symbol` primitive or object.
+       *
+       * @static
+       * @memberOf _
+       * @since 4.0.0
+       * @category Lang
+       * @param {*} value The value to check.
+       * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
+       * @example
+       *
+       * _.isSymbol(Symbol.iterator);
+       * // => true
+       *
+       * _.isSymbol('abc');
+       * // => false
+       */
+      function isSymbol(value) {
+        return typeof value == "symbol" || (isObjectLike(value) && baseGetTag(value) == symbolTag);
+      }
+
+      module.exports = isSymbol;
+
+      /***/
+    },
+
+    /***/ 2931: /***/ (module, __unused_webpack_exports, __nccwpck_require__) => {
+      var baseToString = __nccwpck_require__(6792);
+
+      /**
+       * Converts `value` to a string. An empty string is returned for `null`
+       * and `undefined` values. The sign of `-0` is preserved.
+       *
+       * @static
+       * @memberOf _
+       * @since 4.0.0
+       * @category Lang
+       * @param {*} value The value to convert.
+       * @returns {string} Returns the converted string.
+       * @example
+       *
+       * _.toString(null);
+       * // => ''
+       *
+       * _.toString(-0);
+       * // => '-0'
+       *
+       * _.toString([1, 2, 3]);
+       * // => '1,2,3'
+       */
+      function toString(value) {
+        return value == null ? "" : baseToString(value);
+      }
+
+      module.exports = toString;
 
       /***/
     },
@@ -29394,6 +30162,9 @@ Content-Type: image/png\r\n
       var $TypeError = GetIntrinsic("%TypeError%");
       var $floor = GetIntrinsic("%Math.floor%");
 
+      /** @typedef {(...args: unknown[]) => unknown} Func */
+
+      /** @type {<T extends Func = Func>(fn: T, length: number, loose?: boolean) => T} */
       module.exports = function setFunctionLength(fn, length) {
         if (typeof fn !== "function") {
           throw new $TypeError("`fn` is not a function");
@@ -29418,9 +30189,9 @@ Content-Type: image/png\r\n
 
         if (functionLengthIsConfigurable || functionLengthIsWritable || !loose) {
           if (hasDescriptors) {
-            define(fn, "length", length, true, true);
+            define(/** @type {Parameters<define>[0]} */ (fn), "length", length, true, true);
           } else {
-            define(fn, "length", length);
+            define(/** @type {Parameters<define>[0]} */ (fn), "length", length);
           }
         }
         return fn;
@@ -48952,9 +49723,7 @@ ${pendingInterceptorsFormatter.format(pending)}
         matchedMockDispatches = matchedMockDispatches.filter((mockDispatch) => matchHeaders(mockDispatch, key.headers));
         if (matchedMockDispatches.length === 0) {
           throw new MockNotMatchedError(
-            `Mock dispatch not matched for headers '${
-              typeof key.headers === "object" ? JSON.stringify(key.headers) : key.headers
-            }'`
+            `Mock dispatch not matched for headers '${typeof key.headers === "object" ? JSON.stringify(key.headers) : key.headers}'`
           );
         }
 
@@ -49775,9 +50544,8 @@ ${pendingInterceptorsFormatter.format(pending)}
           } else if (opts.token) {
             this[kProxyHeaders]["proxy-authorization"] = opts.token;
           } else if (username && password) {
-            this[kProxyHeaders]["proxy-authorization"] = `Basic ${Buffer.from(
-              `${decodeURIComponent(username)}:${decodeURIComponent(password)}`
-            ).toString("base64")}`;
+            this[kProxyHeaders]["proxy-authorization"] =
+              `Basic ${Buffer.from(`${decodeURIComponent(username)}:${decodeURIComponent(password)}`).toString("base64")}`;
           }
 
           const connect = buildConnector({ ...opts.proxyTls });
@@ -65882,7 +66650,7 @@ ${pendingInterceptorsFormatter.format(pending)}
     /***/ 2818: /***/ (module) => {
       "use strict";
       module.exports = JSON.parse(
-        '{"name":"ali-oss","version":"6.19.0","description":"aliyun oss(object storage service) node client","main":"./lib/client.js","files":["lib","shims","dist"],"browser":{"./lib/client.js":"./dist/aliyun-oss-sdk.js","mime":"mime/lite","urllib":"./shims/xhr.js","utility":"./shims/utility.js","crypto":"./shims/crypto/crypto.js","debug":"./shims/debug","fs":false,"child_process":false,"is-type-of":"./shims/is-type-of.js"},"scripts":{"build-change-log":"standard-version","test":"npm run tsc && mocha -t 120000 -r should -r dotenv/config test/node/*.test.js test/node/**/*.test.js","test-cov":"npm run tsc && nyc --reporter=lcov node_modules/.bin/_mocha -t 120000 -r should test/node/*.test.js test/node/**/*.test.js","jshint":"jshint .","build-test":"MINIFY=1 node browser-build.js > test/browser/build/aliyun-oss-sdk.min.js && node -r dotenv/config task/browser-test-build.js > test/browser/build/tests.js","browser-test":"npm run build-test && karma start","build-dist":"npm run tsc && node browser-build.js > dist/aliyun-oss-sdk.js && MINIFY=1 node browser-build.js > dist/aliyun-oss-sdk.min.js","publish-to-npm":"node publish-npm-check.js && npm publish","publish-to-cdn":"node publish.js","snyk-protect":"snyk-protect","lint-staged":"lint-staged","detect-secrets":"node task/detect-secrets","tsc":"npm run tsc:clean && npm run tsc:build","tsc:build":"tsc -b tsconfig.json tsconfig-cjs.json","tsc:watch":"tsc -b tsconfig.json tsconfig-cjs.json --watch","tsc:clean":"tsc -b tsconfig.json tsconfig-cjs.json --clean ","prepare":"husky install"},"git-pre-hooks":{"pre-release":"npm run build-dist","post-release":["npm run publish-to-npm","npm run publish-to-cdn"]},"homepage":"https://github.com/ali-sdk/ali-oss","bugs":{"url":"https://github.com/ali-sdk/ali-oss/issues"},"publishConfig":{"registry":"https://registry.npmjs.org/","access":"public"},"repository":{"type":"git","url":"https://github.com/ali-sdk/ali-oss.git"},"keywords":["oss","client","file","aliyun"],"author":"dead_horse","license":"MIT","engines":{"node":">=8"},"devDependencies":{"@babel/core":"^7.11.6","@babel/plugin-transform-regenerator":"^7.10.4","@babel/plugin-transform-runtime":"^7.11.5","@babel/preset-env":"^7.11.5","@babel/runtime":"^7.11.2","@commitlint/cli":"^17.6.7","@commitlint/config-conventional":"^16.2.4","@octokit/core":"^5.0.0","@semantic-release/exec":"^6.0.3","@semantic-release/git":"^10.0.1","@semantic-release/npm":"^10.0.5","@snyk/protect":"^1.1196.0","@types/node":"^14.0.12","@typescript-eslint/eslint-plugin":"^5.0.0","@typescript-eslint/parser":"^5.0.0","aliasify":"^2.0.0","axios":"0.27.2","babelify":"^10.0.0","beautify-benchmark":"^0.2.4","benchmark":"^2.1.1","bluebird":"^3.1.5","browserify":"^17.0.0","core-js":"^3.6.5","crypto-js":"^3.1.9-1","dotenv":"^8.2.0","eslint":"^8.44.0","eslint-config-airbnb":"^19.0.4","eslint-config-ali":"^13.0.0","eslint-config-prettier":"^8.8.0","eslint-plugin-import":"^2.21.1","eslint-plugin-jsx-a11y":"^6.0.3","eslint-plugin-prettier":"^4.2.1","filereader":"^0.10.3","form-data":"^4.0.0","git-pre-hooks":"^1.2.0","husky":"^7.0.4","immediate":"^3.3.0","karma":"^6.3.4","karma-browserify":"^8.1.0","karma-chrome-launcher":"^2.2.0","karma-firefox-launcher":"^1.0.1","karma-ie-launcher":"^1.0.0","karma-mocha":"^2.0.1","karma-safari-launcher":"^1.0.0","lint-staged":"^12.4.1","mm":"^2.0.0","mocha":"^9.1.2","nyc":"^15.1.0","prettier":"^3.0.0","promise-polyfill":"^6.0.2","puppeteer":"19.0.0","semantic-release":"^21.1.1","should":"^11.0.0","sinon":"^15.2.0","standard-version":"^9.3.1","stream-equal":"^1.1.0","timemachine":"^0.3.0","typescript":"^3.9.5","uglify-js":"^3.14.2","watchify":"^4.0.0"},"dependencies":{"address":"^1.2.2","agentkeepalive":"^3.4.1","bowser":"^1.6.0","copy-to":"^2.0.1","dateformat":"^2.0.0","debug":"^4.3.4","destroy":"^1.0.4","end-or-error":"^1.0.1","get-ready":"^1.0.0","humanize-ms":"^1.2.0","is-type-of":"^1.4.0","js-base64":"^2.5.2","jstoxml":"^2.0.0","merge-descriptors":"^1.0.1","mime":"^2.4.5","platform":"^1.3.1","pump":"^3.0.0","sdk-base":"^2.0.1","stream-http":"2.8.2","stream-wormhole":"^1.0.4","urllib":"2.41.0","utility":"^1.18.0","xml2js":"^0.6.2"},"snyk":true,"lint-staged":{"**/!(dist)/*":["npm run detect-secrets --"],"**/*.{js,ts}":["eslint --cache --fix --ext .js,.ts","prettier --write","git add"]}}'
+        '{"name":"ali-oss","version":"6.20.0","description":"aliyun oss(object storage service) node client","main":"./lib/client.js","files":["lib","shims","dist"],"browser":{"./lib/client.js":"./dist/aliyun-oss-sdk.js","mime":"mime/lite","urllib":"./shims/xhr.js","utility":"./shims/utility.js","crypto":"./shims/crypto/crypto.js","debug":"./shims/debug","fs":false,"child_process":false,"is-type-of":"./shims/is-type-of.js"},"scripts":{"build-change-log":"standard-version","test":"npm run tsc && mocha -t 120000 -r should -r dotenv/config test/node/*.test.js test/node/**/*.test.js","test-cov":"npm run tsc && nyc --reporter=lcov node_modules/.bin/_mocha -t 120000 -r should test/node/*.test.js test/node/**/*.test.js","jshint":"jshint .","build-test":"MINIFY=1 node browser-build.js > test/browser/build/aliyun-oss-sdk.min.js && node -r dotenv/config task/browser-test-build.js > test/browser/build/tests.js","browser-test":"npm run build-test && karma start","build-dist":"npm run tsc && node browser-build.js > dist/aliyun-oss-sdk.js && MINIFY=1 node browser-build.js > dist/aliyun-oss-sdk.min.js","publish-to-npm":"node publish-npm-check.js && npm publish","publish-to-cdn":"node publish.js","snyk-protect":"snyk-protect","lint-staged":"lint-staged","detect-secrets":"node task/detect-secrets","tsc":"npm run tsc:clean && npm run tsc:build","tsc:build":"tsc -b tsconfig.json tsconfig-cjs.json","tsc:watch":"tsc -b tsconfig.json tsconfig-cjs.json --watch","tsc:clean":"tsc -b tsconfig.json tsconfig-cjs.json --clean ","prepare":"husky install"},"git-pre-hooks":{"pre-release":"npm run build-dist","post-release":["npm run publish-to-npm","npm run publish-to-cdn"]},"homepage":"https://github.com/ali-sdk/ali-oss","bugs":{"url":"https://github.com/ali-sdk/ali-oss/issues"},"publishConfig":{"registry":"https://registry.npmjs.org/","access":"public"},"repository":{"type":"git","url":"https://github.com/ali-sdk/ali-oss.git"},"keywords":["oss","client","file","aliyun"],"author":"dead_horse","license":"MIT","engines":{"node":">=8"},"devDependencies":{"@babel/core":"^7.11.6","@babel/plugin-transform-regenerator":"^7.10.4","@babel/plugin-transform-runtime":"^7.11.5","@babel/preset-env":"^7.11.5","@babel/runtime":"^7.11.2","@commitlint/cli":"^17.6.7","@commitlint/config-conventional":"^16.2.4","@octokit/core":"^5.0.0","@semantic-release/exec":"^6.0.3","@semantic-release/git":"^10.0.1","@semantic-release/npm":"^10.0.5","@snyk/protect":"^1.1196.0","@types/node":"^14.0.12","@typescript-eslint/eslint-plugin":"^5.0.0","@typescript-eslint/parser":"^5.0.0","aliasify":"^2.0.0","axios":"0.27.2","babelify":"^10.0.0","beautify-benchmark":"^0.2.4","benchmark":"^2.1.1","bluebird":"^3.1.5","browserify":"^17.0.0","core-js":"^3.6.5","crypto-js":"^3.1.9-1","dotenv":"^8.2.0","eslint":"^8.44.0","eslint-config-airbnb":"^19.0.4","eslint-config-ali":"^13.0.0","eslint-config-prettier":"^8.8.0","eslint-plugin-import":"^2.21.1","eslint-plugin-jsx-a11y":"^6.0.3","eslint-plugin-prettier":"^4.2.1","filereader":"^0.10.3","form-data":"^4.0.0","git-pre-hooks":"^1.2.0","husky":"^7.0.4","immediate":"^3.3.0","karma":"^6.3.4","karma-browserify":"^8.1.0","karma-chrome-launcher":"^2.2.0","karma-firefox-launcher":"^1.0.1","karma-ie-launcher":"^1.0.0","karma-mocha":"^2.0.1","karma-safari-launcher":"^1.0.0","lint-staged":"^12.4.1","mm":"^2.0.0","mocha":"^9.1.2","nyc":"^15.1.0","prettier":"^3.0.0","promise-polyfill":"^6.0.2","puppeteer":"19.0.0","semantic-release":"^21.1.1","should":"^11.0.0","sinon":"^15.2.0","standard-version":"^9.3.1","stream-equal":"^1.1.0","timemachine":"^0.3.0","typescript":"^3.9.5","uglify-js":"^3.14.2","watchify":"^4.0.0"},"dependencies":{"address":"^1.2.2","agentkeepalive":"^3.4.1","bowser":"^1.6.0","copy-to":"^2.0.1","dateformat":"^2.0.0","debug":"^4.3.4","destroy":"^1.0.4","end-or-error":"^1.0.1","get-ready":"^1.0.0","humanize-ms":"^1.2.0","is-type-of":"^1.4.0","js-base64":"^2.5.2","jstoxml":"^2.0.0","lodash":"^4.17.21","merge-descriptors":"^1.0.1","mime":"^2.4.5","platform":"^1.3.1","pump":"^3.0.0","qs":"^6.4.0","sdk-base":"^2.0.1","stream-http":"2.8.2","stream-wormhole":"^1.0.4","urllib":"2.41.0","utility":"^1.18.0","xml2js":"^0.6.2"},"snyk":true,"lint-staged":{"**/!(dist)/*":["npm run detect-secrets --"],"**/*.{js,ts}":["eslint --cache --fix --ext .js,.ts","prettier --write","git add"]}}'
       );
 
       /***/
