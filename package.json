@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
-    "@commitlint/config-conventional": "^19.2.2",
+    "@commitlint/config-conventional": "^19.6.0",
     "@types/ali-oss": "^6.16.11",
     "@types/eslint": "^9.6.1",
     "@types/eslint-config-prettier": "^6.11.3",
